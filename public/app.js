@@ -1,0 +1,117 @@
+import {parseCSV, suggestMapping, normalizeData, summarize, filterPeriod, groupBy, percentChange, METRICS} from './analytics.js';
+
+const $ = s => document.querySelector(s);
+const content = $('#content'), dialog = $('#upload-dialog');
+const state = {data:null, name:'', example:false, days:'30', parsed:null, page:'overview', question:'', search:''};
+const colors = ['#ff923d','#69b8f3','#ffc835','#e995a2','#9dc58e','#b99bdb'];
+const escapeHTML = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = v => v === null || !Number.isFinite(v) ? '—' : new Intl.NumberFormat('en-US',{style:'currency',currency:state.data?.currency || 'USD',minimumFractionDigits:0,maximumFractionDigits:2}).format(v);
+const count = v => v === null || !Number.isFinite(v) ? '—' : new Intl.NumberFormat('en-US',{maximumFractionDigits:1}).format(v);
+const ratio = v => v === null || !Number.isFinite(v) ? '—' : `${v.toFixed(2)}x`;
+const metricText = (key,v) => key === 'conversions' ? count(v) : key === 'roas' ? ratio(v) : money(v);
+const dateLabel = iso => iso ? new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(`${iso}T00:00:00Z`)) : '';
+const compactDate = iso => new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(`${iso}T00:00:00Z`));
+const getPage = () => ['overview','campaigns','insights','ask'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+const currentPeriod = () => state.data ? filterPeriod(state.data.records,state.days) : {current:[], previous:[],start:null,end:null};
+const complete = (summary,key) => summary.count > 0 && summary[`${key}Coverage`] === summary.count;
+const comparable = period => state.days !== 'all' && new Set(period.current.map(r=>r.date)).size === Number(state.days) && new Set(period.previous.map(r=>r.date)).size === Number(state.days);
+const priorSummary = period => summarize(comparable(period) ? period.previous : []);
+const summaryChange = (cur,prev,key) => {
+  if (!prev.count) return null;
+  if (key === 'roas') return percentChange(cur.roas,prev.roas);
+  return complete(cur,key) && complete(prev,key) ? percentChange(cur[key],prev[key]) : null;
+};
+function dateSelect(){return `<label class="select-wrap"><span class="sr-only">Date range</span><select id="period"><option value="30" ${state.days==='30'?'selected':''}>Last 30 days</option><option value="7" ${state.days==='7'?'selected':''}>Last 7 days</option><option value="90" ${state.days==='90'?'selected':''}>Last 90 days</option><option value="all" ${state.days==='all'?'selected':''}>All dates</option></select></label>`}
+function metrics(cur,prev){
+  const items=[['spend','Spend','◒'],['revenue','Revenue','▰'],['conversions','Conversions','●'],['roas','ROAS','▥']];
+  return `<div class="metric-grid">${items.map(([key,label,icon])=>{
+    const val=cur[key]??null, change=summaryChange(cur,prev,key);
+    let note=!state.data?'Waiting for your CSV': val===null ? 'Not enough data' : key!=='roas'&&!complete(cur,key)?`Partial: ${cur[`${key}Coverage`]}/${cur.count} rows` : change===null?'No prior comparison':change===0?'Unchanged vs. prior period':`<span class="${change>0?'trend-up':'trend-down'}">${change>0?'▲':'▼'} ${Math.abs(change).toFixed(1)}%</span> vs. prior period`;
+    return `<article class="metric-card"><div class="metric-icon" aria-hidden="true">${icon}</div><div class="metric-content"><div class="metric-name">${label}</div><div class="metric-value">${metricText(key,val)}</div><div class="metric-foot">${note}</div></div></article>`;
+  }).join('')}</div>`;
+}
+function chart(rows){
+  const revRows=rows.filter(r=>r.revenue!==null);
+  if(!revRows.length) return `<div class="chart-empty"><span class="empty-star">✦</span><strong>${state.data?'No revenue to chart yet':'A little room for your big picture'}</strong><p>${state.data?'Map a revenue column with values to see your performance over time.':'Your chart and channel breakdown will appear once you add a CSV.'}</p></div>`;
+  const channels=groupBy(rows,'channel').filter(g=>g.revenue!==null).slice(0,3); const dates=[...new Set(revRows.map(r=>r.date))].sort();
+  const daily=new Map(); for(const r of revRows){const k=`${r.date}\u0000${r.channel}`;daily.set(k,(daily.get(k)||0)+r.revenue)}
+  const values=[...daily.values()], min=Math.min(0,...values), max=Math.max(0,...values); const scale=(max-min)||1;
+  const w=650,h=218,left=59,right=16,top=15,bottom=30;
+  const minTime=Date.parse(`${dates[0]}T00:00:00Z`),maxTime=Date.parse(`${dates.at(-1)}T00:00:00Z`);
+  const x=iso => dates.length===1 ? (left+w-right)/2 : left+(Date.parse(`${iso}T00:00:00Z`)-minTime)/(maxTime-minTime)*(w-left-right);
+  const y=n=>top+(max-n)/scale*(h-top-bottom);
+  let axes=''; for(let i=0;i<=4;i++){const yy=top+i*(h-top-bottom)/4, v=max-i*scale/4;axes+=`<line class="grid" x1="${left}" x2="${w-right}" y1="${yy}" y2="${yy}"/><text x="${left-8}" y="${yy+4}" text-anchor="end">${escapeHTML(money(v))}</text>`;}
+  const ticks=[...new Set([dates[0],dates[Math.floor((dates.length-1)/2)],dates.at(-1)])];for(const d of ticks)axes+=`<text x="${x(d)}" y="${h-6}" text-anchor="middle">${escapeHTML(compactDate(d))}</text>`;
+  const lines=channels.map((g,i)=>{const points=dates.filter(d=>daily.has(`${d}\u0000${g.label}`)).map(d=>[x(d),y(daily.get(`${d}\u0000${g.label}`))]);if(!points.length)return '';const path=points.map(([xx,yy],n)=>`${n?'L':'M'}${xx.toFixed(1)} ${yy.toFixed(1)}`).join(' ');return `<path class="series" stroke="${colors[i]}" d="${path}"/>${points.length===1?`<circle cx="${points[0][0]}" cy="${points[0][1]}" r="4" fill="${colors[i]}"/>`:''}`}).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Revenue by channel over recorded dates; detailed values are in the channel table below.">${axes}${lines}</svg><div class="legend">${channels.map((g,i)=>`<span><i class="legend-dot" style="background:${colors[i]}"></i>${escapeHTML(g.label)}</span>`).join('')}</div><p class="footnote">Revenue by channel, for recorded dates. Lines connect available points; missing dates aren't assumed to be zero. ${channels.length===3&&groupBy(rows,'channel').length>3?'Showing the top 3 channels by recorded revenue.':''}</p>`;
+}
+function channelTable(rows){
+ const groups=groupBy(rows,'channel');
+ if(!groups.length)return `<div class="table-box"><h3>Channel breakdown</h3><p class="footnote">Your channels will have a home here.</p></div>`;
+ const total=groups.reduce((a,b)=>a+(b.revenue??0),0); const canShare=total>0&&groups.every(g=>g.revenue===null||g.revenue>=0);
+ return `<div class="table-box"><h3>Channel breakdown</h3><div class="table-scroll"><table><thead><tr><th>Channel</th><th>Spend</th><th>Revenue</th><th>Conversions</th><th>ROAS</th><th>Share*</th></tr></thead><tbody>${groups.map((g,i)=>{const share=canShare&&g.revenue!==null?g.revenue/total*100:0;return `<tr><td><div class="channel-name"><span class="color-dot" style="background:${colors[i%colors.length]}"></span>${escapeHTML(g.label)}</div></td><td>${money(g.spend)}</td><td>${money(g.revenue)}</td><td>${count(g.conversions)}</td><td>${ratio(g.roas)}</td><td>${g.revenue!==null&&canShare?`${share.toFixed(0)}%`:'—'}<div class="bar-track"><div class="bar-fill" style="width:${share}%;background:${colors[i%colors.length]}"></div></div></td></tr>`}).join('')}</tbody></table></div><p class="footnote">*Share of recorded revenue; hidden when channel revenue is negative. Totals can be partial when cells are missing; ROAS needs complete spend and revenue for that channel.</p></div>`;
+}
+function insights(cur,prev){
+ if(!cur.count)return [{title:'Your story starts here',body:'Add your marketing data and Waddle will help you spot what stands out.'},{title:'No guesswork required',body:'Insights are calculated from the rows you upload.'}];
+ const out=[];for(const key of ['revenue','conversions','spend']){
+  const n=summaryChange(cur,prev,key); if(n!==null){const direction=n>0?'up':n<0?'down':'unchanged';const verb=key==='conversions'?'are':'is';out.push({title:`${key[0].toUpperCase()+key.slice(1)} ${n===0?`${verb} unchanged`:`${verb} ${direction} ${Math.abs(n).toFixed(1)}%`}`,body:`${metricText(key,cur[key])} in this period vs. ${metricText(key,prev[key])} in the previous window.`});}
+ }
+ if(!out.length)out.push({title:'Your data is ready to explore',body:'Change comparisons need records for every date in both windows and complete metric values.'});
+ if(cur.roas!==null)out.push({title:`Recorded ROAS is ${ratio(cur.roas)}`,body:'Revenue divided by spend for the selected records.'});
+ return out.slice(0,3);
+}
+function recommendation(rows){
+ if(!rows.length)return 'Upload a CSV to see a practical next step based on your own numbers.';
+ const candidates=groupBy(rows,'channel').filter(g=>g.roas!==null && g.spend>0).sort((a,b)=>b.roas-a.roas);
+ if(!candidates.length)return 'Review your channel breakdown. Add complete spend and revenue values to compare return on ad spend.';
+ const top=candidates[0];return `Review ${escapeHTML(top.label)}: its recorded ROAS is ${ratio(top.roas)}. Check conversion volume and profitability before changing its budget.`;
+}
+function overview(period){
+ const cur=summarize(period.current), prev=priorSummary(period);
+ return `${metrics(cur,prev)}<div class="dashboard-grid"><section class="panel performance"><div class="panel-heading"><div><h2>Performance</h2><p>Revenue over time by marketing channel</p></div>${dateSelect()}</div>${chart(period.current)}${channelTable(period.current)}</section><div class="side-stack"><section class="panel insight-card"><img class="mascot" src="./assets/waddle.svg" alt=""><div class="card-title"><span class="title-star" aria-hidden="true">✦</span><h2>Here’s what changed</h2></div><div class="insight-list">${insights(cur,prev).map((item,i)=>`<div class="insight-row"><span class="insight-badge" aria-hidden="true">${i===0?'↗':i===1?'✦':'↟'}</span><div><strong>${escapeHTML(item.title)}</strong><p>${escapeHTML(item.body)}</p></div></div>`).join('')}</div></section><section class="panel step-card"><div class="card-title"><span class="step-icon" aria-hidden="true">⚑</span><h2>Your next little step</h2></div><p>${recommendation(period.current)}</p>${!state.data?'<button class="text-button step-action" data-upload>Upload your CSV →</button>':''}</section><p class="hint">✧ Comparisons need records for every date in both windows. Insights describe your data, not proof of what caused a change.</p></div></div>`;
+}
+function emptyBlock(heading,detail){return `<div class="empty-state"><img class="empty-waddle" src="./assets/waddle.svg" alt=""><h3>${heading}</h3><p>${detail}</p><div class="empty-actions"><button class="button button-primary" data-upload>Upload CSV</button><button class="button button-soft" data-example>Try sample data</button></div></div>`}
+function campaigns(period){
+ if(!state.data)return `<section class="panel wide-panel">${emptyBlock('Let’s get those campaigns in here','Import a CSV with a campaign column to explore performance.')}</section>`;
+ let groups=groupBy(period.current,'campaign');const q=state.search.toLowerCase().trim();if(q)groups=groups.filter(g=>g.label.toLowerCase().includes(q));
+ return `<section class="panel wide-panel"><div class="panel-heading"><div><h2>Campaigns at a glance</h2><p>Compare the campaigns in your selected period.</p></div>${dateSelect()}</div><div class="toolbar"><input id="campaign-search" class="search" type="search" placeholder="Search campaigns" aria-label="Search campaigns" value="${escapeHTML(state.search)}"><span class="hint">${groups.length} campaign${groups.length===1?'':'s'}</span></div><div class="table-scroll"><table><thead><tr><th>Campaign</th><th>Spend</th><th>Revenue</th><th>Conversions</th><th>ROAS</th><th>Rows</th></tr></thead><tbody>${groups.map(g=>`<tr><td>${escapeHTML(g.label)}</td><td>${money(g.spend)}</td><td>${money(g.revenue)}</td><td>${count(g.conversions)}</td><td>${ratio(g.roas)}</td><td>${g.count}</td></tr>`).join('')||'<tr><td colspan="6">No matching campaigns in this period.</td></tr>'}</tbody></table></div><p class="footnote">Campaigns with the same name are grouped together across channels. Missing campaign names appear as “Unassigned campaign”. Totals can be partial; ROAS requires complete spend and revenue.</p></section>`;
+}
+function insightsPage(period){
+ if(!state.data)return `<section class="panel wide-panel">${emptyBlock('A little insight goes a long way','Upload your marketing data to see what stands out.')}</section>`;
+ const cur=summarize(period.current),prev=priorSummary(period),cards=insights(cur,prev);
+ return `<section class="panel wide-panel"><div class="panel-heading"><div><h2>A closer look</h2><p>A few observations, grounded in your uploaded data.</p></div>${dateSelect()}</div><div class="info-grid">${cards.map(x=>`<article class="info-card"><h3>✦ ${escapeHTML(x.title)}</h3><p>${escapeHTML(x.body)}</p></article>`).join('')}<article class="info-card"><h3>⚑ Your next little step</h3><p>${recommendation(period.current)}</p></article></div><div class="notice">Comparisons use the previous equal-length date window only when both windows contain records for every date. A date having records doesn't guarantee a complete export; observed differences aren't necessarily caused by a channel or campaign.</div><h3>Data coverage</h3><p class="footnote">In the selected period: ${cur.count} rows; spend is present on ${cur.spendCoverage}, revenue on ${cur.revenueCoverage}, and conversions on ${cur.conversionsCoverage}. A blank cell is not treated as zero; duplicate rows are not removed.</p></section>`;
+}
+function answer(question,period){
+ const s=summarize(period.current), groups=groupBy(period.current,'channel');
+ if(!period.current.length)return 'Add a CSV first, then pick a question and I’ll look at your recorded numbers.';
+ if(question==='best'){const g=groups.filter(g=>g.roas!==null).sort((a,b)=>b.roas-a.roas)[0];return g?`${g.label} has the highest recorded ROAS at ${ratio(g.roas)} (${money(g.revenue)} revenue ÷ ${money(g.spend)} spend). Review volume and profit too; ROAS alone is not profit.`:'I need complete spend and revenue for at least one channel to compare ROAS.'}
+ if(question==='revenue'){const g=groups.find(g=>g.revenue!==null);return g?`${g.label} has the most recorded revenue at ${money(g.revenue)} in the selected period. Totals can be partial if revenue values are missing.`:'I couldn’t find a revenue value in this period.'}
+ if(question==='changes'){const p=priorSummary(period), cs=insights(s,p);return cs.map(x=>`${x.title}. ${x.body}`).join(' ')}
+ if(question==='coverage')return `There are ${s.count} rows in this period. Spend is present on ${s.spendCoverage}, revenue on ${s.revenueCoverage}, and conversions on ${s.conversionsCoverage}. Blank cells are not treated as zero.`;
+ return 'Choose a question below and I’ll use the numbers in your selected date range.';
+}
+function askPage(period){return `<section class="panel wide-panel"><div class="panel-heading"><div><h2>Hi, I’m Waddle. ✦</h2><p>Pick a question for a quick, numbers-first answer.</p></div>${state.data?dateSelect():''}</div><div class="question-list"><button class="question" data-question="best">Which channel has the best ROAS?</button><button class="question" data-question="revenue">Where is revenue highest?</button><button class="question" data-question="changes">What changed?</button><button class="question" data-question="coverage">Is my data complete?</button></div><div class="answer" role="status">${escapeHTML(answer(state.question,period))}</div><p class="footnote">These answers use simple rules and your uploaded data, not AI. They don’t establish causation or account for profit.</p>${!state.data?'<button class="button button-soft" data-upload>Upload CSV</button>':''}</section>`}
+function render(){
+ state.page=getPage();document.querySelectorAll('.nav-link').forEach(a=>{const active=a.dataset.page===state.page;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+ const titles={overview:['Your marketing, all in one <span>cozy place.</span>','A little perspective makes a big difference.'],campaigns:['Every campaign has a <span>story.</span>','Find the little details behind the big picture.'],insights:['The good stuff, <span>uncovered.</span>','Turn the numbers into a little more clarity.'],ask:['A little help from <span>Waddle.</span>','A friendly guide to the numbers in front of you.']};
+ $('#page-title').innerHTML=titles[state.page][0];$('#page-subtitle').textContent=titles[state.page][1];
+ const period=currentPeriod(),bar=$('#dataset-bar');bar.hidden=!state.data;
+ if(state.data){const warning=state.data.errors.length?` · ${state.data.errors.length} skipped`:'';bar.innerHTML=`<span class="dot"></span><span class="file-name">${escapeHTML(state.name)}</span>${state.example?'<span class="tag">SAMPLE DATA</span>':''}<span>· ${state.data.records.length.toLocaleString()} rows${warning} · ${escapeHTML(dateLabel(period.start))} – ${escapeHTML(dateLabel(period.end))}</span><button class="text-button" data-clear>Clear</button>`;}
+ const warnings=state.data?.errors.length?`<div class="notice" role="status"><strong>${state.data.errors.length} record(s) skipped:</strong> ${state.data.errors.slice(0,5).map(e=>`record ${e.record}: ${escapeHTML(e.reason)}`).join('; ')}${state.data.errors.length>5?'; and more':''}. Record numbers count data records after the header, including quoted multiline records. Fix the file and upload again to include them.</div>`:'';
+ content.innerHTML=warnings+(state.page==='overview'?overview(period):state.page==='campaigns'?campaigns(period):state.page==='insights'?insightsPage(period):askPage(period));
+}
+function mappingOptions(selected){return `<option value="-1">Not mapped</option>${state.parsed.headers.map((h,i)=>`<option value="${i}" ${selected===i?'selected':''}>${escapeHTML(h)}</option>`).join('')}`}
+function showMapping(parsed,filename){state.parsed=parsed;state.pendingName=filename;const map=suggestMapping(parsed.headers);const fields=[['date','Date *'],['channel','Channel *'],['campaign','Campaign'],['spend','Spend'],['revenue','Revenue'],['conversions','Conversions'],['currency','Currency column']];$('#mapping-fields').innerHTML=fields.map(([key,label])=>`<label>${label}<select data-map="${key}">${mappingOptions(map[key])}</select></label>`).join('');$('#file-name').textContent=filename;$('#file-info').textContent=`${parsed.rows.length.toLocaleString()} rows · ${parsed.headers.length} columns`;$('#upload-start').hidden=true;$('#mapping').hidden=false;$('#upload-error').textContent='';$('#mapping-error').textContent='';}
+function resetUpload(){state.parsed=null;$('#file-input').value='';$('#upload-start').hidden=false;$('#mapping').hidden=true;$('#upload-error').textContent='';$('#mapping-error').textContent=''}
+function openUpload(){resetUpload();if(!dialog.open)dialog.showModal()}
+async function processFile(file){if(!file)return;$('#upload-error').textContent='';if(file.size>5*1024*1024){$('#upload-error').textContent='This file is larger than 5 MB. Please split it into smaller files.';return}if(!/\.csv$/i.test(file.name)&&file.type!=='text/csv'){$('#upload-error').textContent='Please choose a CSV file.';return}try{const parsed=parseCSV(await file.text());showMapping(parsed,file.name)}catch(error){$('#upload-error').textContent=error.message}}
+function commitImport(){try{const mapping=Object.fromEntries([...document.querySelectorAll('[data-map]')].map(el=>[el.dataset.map,Number(el.value)]));const result=normalizeData(state.parsed,mapping,$('#currency').value);state.data=result;state.name=state.pendingName;state.example=false;state.days='30';state.search='';state.question='';dialog.close();location.hash='#overview';render();}catch(error){$('#mapping-error').textContent=error.message}}
+function sampleData(){const rows=[];const channels=[['Paid Search','Search — Spring',60,240,3],['Paid Social','Social — Launch',45,146,2],['Email','Email — Welcome',15,65,1]];for(let d=0;d<60;d++){const day=new Date(Date.UTC(2026,7,1+d)).toISOString().slice(0,10);channels.forEach(([channel,campaign,spend,revenue,conversions],i)=>rows.push({date:day,channel,campaign,spend:spend+(d%6)*2,revenue:revenue+(d%8)*8+i*3,conversions:conversions+(d%3)}));}state.data={records:rows,errors:[],currency:'USD'};state.name='Sample marketing data';state.example=true;state.days='30';state.search='';state.question='';if(dialog.open)dialog.close();location.hash='#overview';render()}
+function downloadTemplate(){const csv='Date,Channel,Campaign,Spend,Revenue,Conversions,Currency\n2026-01-01,Paid Search,Spring Launch,100,450,8,USD\n2026-01-02,Email,Welcome Series,20,120,3,USD\n';const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='waddle-dash-template.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+window.addEventListener('hashchange',render);
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.matches('[data-upload]'))openUpload();else if(b.matches('[data-close-dialog]'))dialog.close();else if(b.matches('[data-example]')||b.id==='load-example')sampleData();else if(b.matches('[data-clear]')){if(confirm('Clear this dataset from the current session?')){state.data=null;state.name='';state.question='';render()}}else if(b.id==='download-template')downloadTemplate();else if(b.id==='back-upload'||b.id==='change-file')resetUpload();else if(b.id==='import-data')commitImport();else if(b.dataset.question){state.question=b.dataset.question;render();document.querySelector('.answer')?.focus?.()}});
+document.addEventListener('change',e=>{if(e.target.id==='period'){state.days=e.target.value;render()}else if(e.target.id==='file-input')processFile(e.target.files[0])});
+document.addEventListener('input',e=>{if(e.target.id==='campaign-search'){const position=e.target.selectionStart;state.search=e.target.value;render();const input=$('#campaign-search');input.focus();input.setSelectionRange(position,position)}});
+const drop=$('#dropzone');for(const type of ['dragenter','dragover'])drop.addEventListener(type,e=>{e.preventDefault();drop.classList.add('dragging')});for(const type of ['dragleave','drop'])drop.addEventListener(type,e=>{e.preventDefault();drop.classList.remove('dragging')});drop.addEventListener('drop',e=>processFile(e.dataTransfer.files[0]));
+dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+render();

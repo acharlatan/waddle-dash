@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A cozy, local-first dashboard for exploring your marketing data.">
+  <meta name="theme-color" content="#d8efff"><title>Waddle Dash — Your marketing, all in one cozy place</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/waddle.svg"><link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar glass">
+      <a class="brand" href="#overview" aria-label="Waddle Dash home"><img src="./assets/waddle.svg" alt=""><span>Waddle Dash</span><span class="brand-star" aria-hidden="true">✦</span></a>
+      <div class="header-right"><span class="header-note"><span class="status-dot"></span> A little clarity for your marketing</span><button class="button button-primary" data-upload><span class="upload-icon" aria-hidden="true">↥</span> Upload CSV</button></div>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar glass" aria-label="Main navigation">
+        <nav class="nav" id="navigation">
+          <a class="nav-link active" href="#overview" data-page="overview"><span class="nav-icon">⌂</span> Overview</a>
+          <a class="nav-link" href="#campaigns" data-page="campaigns"><span class="nav-icon">▤</span> Campaigns</a>
+          <a class="nav-link" href="#insights" data-page="insights"><span class="nav-icon">▥</span> Insights</a>
+          <a class="nav-link" href="#ask" data-page="ask"><span class="nav-icon">☏</span> Ask Waddle</a>
+        </nav>
+        <div class="sidebar-bottom"><p>YOUR LITTLE WORKSPACE <span>✦</span></p><div class="privacy-pill"><span>✧</span><div><strong>Just you & your data</strong><small>Your CSV stays in this browser.</small></div></div></div>
+        <img class="meadow" src="./assets/meadow.svg" alt="">
+      </aside>
+      <main id="main" class="main" tabindex="-1">
+        <div class="page-heading"><div><p class="eyebrow"><span>✦</span> YOUR MARKETING WORKSPACE</p><h1 id="page-title">Your marketing, all in one <span>cozy place.</span></h1><p id="page-subtitle" class="subtitle">A little perspective makes a big difference.</p></div><div class="heading-sparkle" aria-hidden="true">✳</div></div>
+        <div id="dataset-bar" class="dataset-bar" hidden></div>
+        <div id="content" aria-live="polite"></div>
+        <footer><span>Made for the curious, the creative, and the spreadsheet-weary. ✦</span><span>Waddle Dash is an unofficial fan project.</span></footer>
+      </main>
+    </div>
+  </div>
+  <dialog id="upload-dialog" aria-labelledby="upload-title"><div class="modal-wrap"><div class="modal-head"><div><p class="eyebrow">LET'S GET STARTED ✦</p><h2 id="upload-title">Bring your data in.</h2><p>A little CSV can tell a big story.</p></div><button class="icon-button" data-close-dialog aria-label="Close upload window">×</button></div>
+    <div id="upload-start"><label class="dropzone" id="dropzone"><input id="file-input" type="file" accept=".csv,text/csv" class="sr-only"><span class="drop-icon">↥</span><strong>Choose a CSV file</strong><span>or drag and drop it here</span><small>UTF-8 CSV · up to 5 MB · up to 30,000 rows</small></label><div class="upload-info"><span>✧</span><p><strong>Your data stays yours.</strong> Your file is processed in your browser and is cleared when you leave or refresh this page.</p></div><div class="modal-footer"><button class="text-button" id="download-template">↓ Download CSV template</button><button class="button button-soft" id="load-example">Try sample data</button></div></div>
+    <div id="mapping" hidden><div class="file-label"><span>▤</span><div><strong id="file-name"></strong><small id="file-info"></small></div><button class="text-button" id="change-file">Change</button></div><h3>Match your columns</h3><p class="small-copy">We guessed where we could. Date and channel are required, plus at least one metric.</p><div class="mapping-grid" id="mapping-fields"></div><div class="currency-row"><label for="currency">Reporting currency</label><select id="currency"><option value="USD">USD — US Dollar</option><option value="PHP">PHP — Philippine Peso</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — British Pound</option><option value="CAD">CAD — Canadian Dollar</option><option value="AUD">AUD — Australian Dollar</option></select><small>Use one currency throughout your file; amounts are not converted.</small></div><p id="mapping-error" class="form-error" role="alert"></p><div class="modal-footer"><button class="text-button" id="back-upload">← Back</button><button class="button button-primary" id="import-data">Create my dashboard <span>→</span></button></div></div>
+    <p id="upload-error" class="form-error" role="alert"></p>
+  </div></dialog>
+  <script type="module" src="./app.js"></script>
+</body></html>

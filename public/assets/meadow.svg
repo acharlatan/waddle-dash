@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 250" preserveAspectRatio="xMidYMax slice">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#e0f1ff" stop-opacity="0"/><stop offset="1" stop-color="#f7e1d8"/></linearGradient><linearGradient id="hill" x2=".5" y2="1"><stop stop-color="#c0df95"/><stop offset="1" stop-color="#91c77c"/></linearGradient></defs>
+<path fill="url(#sky)" d="M0 0h320v250H0z"/><g fill="#fff" opacity=".68"><ellipse cx="38" cy="60" rx="50" ry="15"/><ellipse cx="48" cy="50" rx="23" ry="19"/><ellipse cx="270" cy="88" rx="55" ry="16"/><ellipse cx="267" cy="77" rx="24" ry="19"/></g>
+<path d="M0 185Q58 131 131 166T320 151v99H0Z" fill="#b6d99d"/><path d="M0 207q75-80 170-19t150-1v63H0Z" fill="url(#hill)"/><path d="M0 238q98-46 188-10t132-8v30H0Z" fill="#d4e8ad"/>
+<path d="M177 172v-51q0-30 29-33h36q28 2 28 31v54Z" fill="#ffce88" stroke="#efb87b" stroke-width="4"/><rect x="188" y="100" width="70" height="71" rx="20" fill="#f1a981"/><path d="M223 109l7 12 14 2-10 10 2 14-13-7-13 7 2-14-10-10 14-2Z" fill="#ffe8a6" stroke="#ffc868" stroke-width="3"/>
+<g fill="#fff6de"><circle cx="44" cy="203" r="7"/><circle cx="53" cy="200" r="7"/><circle cx="49" cy="211" r="7"/><circle cx="101" cy="220" r="7"/><circle cx="111" cy="219" r="7"/><circle cx="107" cy="228" r="7"/><circle cx="281" cy="202" r="7"/><circle cx="291" cy="200" r="7"/><circle cx="287" cy="210" r="7"/></g><g fill="#ffcc68"><circle cx="49" cy="204" r="4"/><circle cx="106" cy="222" r="4"/><circle cx="286" cy="204" r="4"/></g>
+</svg>
