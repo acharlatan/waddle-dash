@@ -1,32 +1,29 @@
 # Waddle Dash
 
-A free, local-first marketing dashboard with a cozy fan-project aesthetic. Upload a CSV to explore spend, revenue, conversions, ROAS, campaign and channel summaries, comparisons, and rule-based observations. This is an unofficial fan project and is not affiliated with Nintendo or HAL Laboratory.
+A local-first, unofficial fan-project marketing workspace. Waddle Dash imports a supported campaign CSV, shows explainable observations, and lets visitors edit and print a Waddle Report. Ask Waddle is rule-based, not AI. There is no account or external analytics integration.
 
-## Use it
+## Get started
 
-1. Open the site and choose **Upload CSV**. Your file is read in the browser.
-2. Match columns to **Date**, **Channel**, and at least one of **Spend**, **Revenue**, or **Conversions**. Campaign and Currency are optional. Pick the currency used by your file.
-3. Import the data. The dashboard reports skipped records and their reasons. Fix and re-upload the original file if needed.
-4. Use the date selector, Campaigns, Insights, and Ask Waddle to explore the data. The sample dataset is optional and clearly labeled.
+Select **Demo** to explore fictional data; **My data** returns to your uploaded session without mixing or replacing either dataset. Choose **Getting started** for a format guide and a template. The demo, upload, plan and report are held only in browser memory. Refreshing or leaving clears both workspaces.
 
-A downloadable example template is available in the upload dialog. Accepted dates are `YYYY-MM-DD` and `MM/DD/YYYY`; use UTF-8 comma-separated CSV with a header, up to 5 MB and 30,000 data records. Quoted commas, quotes, and newlines are supported. Numbers use a decimal point; comma-separated thousands and common currency symbols are supported. One currency per file is assumed; if a currency column is mapped, nonblank entries must match the selected currency. Amounts are never converted. Use the same metric definition for all rows, and do not include overlapping aggregates and detail rows together. Duplicate rows are not automatically removed.
+### Custom CSV
 
-## How the numbers work
+Use UTF-8 comma-separated values with the header in the first row, up to 5 MB and 30,000 data records. Each row should represent one campaign/channel on one day. Map Date, Channel and at least one of Spend, Revenue, Conversions, Clicks or Impressions. Campaign and Currency are optional. Dates are `YYYY-MM-DD` or US `MM/DD/YYYY`; numbers use a decimal point, optional comma thousands, and common currency symbols. An optional constant channel can be entered if the CSV lacks a channel column. Download the custom template from the upload screen or guide.
 
-- The selected date range ends on the latest date in the imported file, not necessarily today's date. All dates are inclusive.
-- Totals sum recorded values. Blanks are not zero; cards identify partial coverage and table totals may be partial. ROAS is revenue divided by spend and requires complete spend and revenue for the relevant rows and positive total spend.
-- Date-window comparisons only appear when the current and prior equal-length windows have records on every date, and the metric is complete for both windows. The presence of a record on every date does not guarantee the export includes every campaign. Values are descriptive and do not establish causation.
-- Channel revenue share is hidden if a channel has negative revenue. Chart lines connect recorded points; missing dates are not inferred to be zero. The chart shows up to three channels with the largest recorded revenue.
-- Ask Waddle answers a small set of predefined questions through deterministic rules. It is not a chatbot or an AI service. Recommendations are prompts for review, not automatic budget changes, profit calculations, or evidence of causation.
+### Google Ads-style campaign CSV
 
-## Privacy and limits
+The supported synthetic fixture uses `Day,Campaign,Cost,Conversions,Conv. value`, one row per campaign per day, with a user-entered channel and selected currency. Optional clicks/impressions can be mapped. Report titles or other metadata must be removed so the first row contains headers. The user must confirm whether the mapped value is platform-reported conversion value or actual recorded revenue; a Google Ads path defaults to conversion value. This value is not verified revenue or profit. **Not every Google Ads export or localized format is supported.** CRM contact and deal exports are not automatically campaign-performance reports.
 
-Data stays in the browser's memory during the current session and is not sent to a server. Reloading or leaving the page clears it, so keep your original CSV. There are no accounts, saved workspaces, third-party analytics, AI calls, or platform integrations. The app is a fresh implementation: it does not import or preserve data or features from any separate Marketing Insights product.
+A single currency per file is required; mapped nonblank currency codes must match the selected currency. The app excludes identifiable `Total` rows and reports them as skipped. Exact duplicate rows are flagged but never removed automatically; they require confirmation at import. Neither check can identify every overlapping subtotal or duplicate. Users should choose one report level and review their export. Unsupported date and number formats or missing required fields are reported; the preview explains skipped records before import.
 
-## Development and deployment
+## Calculations and reports
 
-No build or dependency installation is required to serve `public/` as static files. Run `npm run check` and `npm test` with a recent Node.js. `wrangler.jsonc` deploys `public/` as static assets to the `waddle-dash` Worker. The connected Cloudflare Workers Builds configuration deploys pushes to `main` with `npx wrangler deploy`. The Worker has no server-side code or data bindings.
+The selected range ends on the latest date in the import. Empty cells are not zero. Totals can be partial; ROAS requires complete paired spend and revenue/conversion value with positive spend. Change comparisons require records on every date in both equal windows, and complete values; a record on every date does not prove that every campaign is present. Observations describe recorded data and do not establish causation. Line charts connect available points, not missing dates as zero. The visible chart has a separate table of the recorded values.
 
-## Cozy workspace update
+The experiment planner is editable and copyable. Waddle Report lets users choose metrics and edit its title, observations, plan and notes. **Print / Save as PDF** invokes the browser print dialog; it does not generate or upload a PDF by itself. Users should review their report before sharing. No report is sent or shared automatically.
 
-The workspace includes a guided first-run panel, a Channels comparison, a Data & settings page, campaign sorting, a choice of chart metrics, and an import preview. The illustrated landscape is an AI-generated decorative asset. The mascot is an original SVG. Reporting remains local to the browser and Ask Waddle continues to use transparent rule-based answers.
+Data and drafts remain in memory and are not sent to a server. There is no background sync, cloud storage, AI service, automated budget change, or persistent local saving. Keep the original data and exported reports. Users choose a goal for context; they must ensure their conversion definition matches that goal.
+
+## Run and deploy
+
+No build is required to serve `public/`. With Node.js, run `npm run check` and `npm test`. `wrangler.jsonc` deploys `public/` as static assets to the connected `waddle-dash` Cloudflare Worker. The Worker has no server-side code or data bindings. The background landscape is an AI-generated decorative asset and the original mascot is an SVG and the report companion is an AI-generated decorative asset.

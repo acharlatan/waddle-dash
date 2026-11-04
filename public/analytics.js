@@ -1,12 +1,14 @@
 // CSV and metric operations are intentionally independent of the UI.
-export const METRICS = ['spend', 'revenue', 'conversions'];
+export const METRICS = ['spend', 'revenue', 'conversions', 'clicks', 'impressions'];
 const ALIASES = {
   date: ['date', 'day', 'report date', 'reporting date', 'start date'],
   channel: ['channel', 'marketing channel', 'source', 'platform', 'source medium'],
   campaign: ['campaign', 'campaign name', 'campaign title', 'campaign id'],
   spend: ['spend', 'cost', 'amount spent', 'ad spend', 'advertising cost', 'total spend'],
-  revenue: ['revenue', 'conversion value', 'conversions value', 'purchase value', 'sales', 'total revenue', 'conversion revenue'],
+  revenue: ['revenue', 'sales', 'total revenue'],
   conversions: ['conversions', 'conversion', 'purchases', 'orders', 'total conversions'],
+  clicks: ['clicks', 'click'],
+  impressions: ['impressions', 'impr'],
   currency: ['currency', 'currency code', 'account currency']
 };
 const cleanHeader = s => String(s).toLowerCase().replace(/^\ufeff/, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -63,25 +65,26 @@ export function parseNumber(value) {
   s = s.replace(/,/g, '');
   const n = Number(s); return Number.isFinite(n) ? (negative ? -Math.abs(n) : n) : NaN;
 }
-export function normalizeData(parsed, mapping, currency = 'USD') {
+export function normalizeData(parsed, mapping, currency = 'USD', options = {}) {
   const fields = Object.values(mapping).filter(x => Number.isInteger(x) && x >= 0);
   if (new Set(fields).size !== fields.length) throw new Error('Each selected column can only be mapped once.');
-  if (mapping.date < 0 || mapping.channel < 0 || !METRICS.some(x => mapping[x] >= 0)) throw new Error('Please select a date, a channel, and at least one metric.');
-  const records = [], errors = []; let mismatch = 0;
+  if (mapping.date < 0 || (mapping.channel < 0 && !String(options.defaultChannel || '').trim()) || !METRICS.some(x => mapping[x] >= 0)) throw new Error('Please select a date, a channel, and at least one metric.');
+  const records = [], errors = [], seen = new Set(); let mismatch = 0, duplicates = 0;
   for (let index = 0; index < parsed.rows.length; index++) {
-    const raw = parsed.rows[index]; const get = field => mapping[field] >= 0 ? (raw[mapping[field]] ?? '').trim() : '';
-    const date = parseDate(get('date')), channel = get('channel');
+    const raw = parsed.rows[index]; const signature = JSON.stringify(raw); if (seen.has(signature)) duplicates++; else seen.add(signature); const get = field => mapping[field] >= 0 ? (raw[mapping[field]] ?? '').trim() : '';
+    const date = parseDate(get('date')), channel = get('channel') || (mapping.channel < 0 ? String(options.defaultChannel || '').trim() : '');
+    const summaryRow = [get('channel'),get('campaign')].some(x=>/^total(?:\s*[:\-]|\s*$)/i.test(x));
     const values = Object.fromEntries(METRICS.map(k => [k, mapping[k] >= 0 ? parseNumber(get(k)) : null]));
     const rowCurrency = get('currency').toUpperCase();
     if (rowCurrency && rowCurrency !== currency) mismatch++;
-    const reason = !date ? 'invalid date' : !channel ? 'missing channel' : METRICS.some(k => Number.isNaN(values[k])) ? 'invalid number' : METRICS.every(k => values[k] === null) ? 'no metric values' : null;
+    const reason = summaryRow ? 'summary row (excluded)' : !date ? 'invalid date' : !channel ? 'missing channel' : METRICS.some(k => Number.isNaN(values[k])) ? 'invalid number' : METRICS.every(k => values[k] === null) ? 'no metric values' : null;
     if (reason) { errors.push({record: index + 1, reason}); continue; }
     records.push({date, channel:channel.slice(0, 160), campaign:get('campaign').slice(0, 160), ...values});
   }
   if (mismatch) throw new Error(`${mismatch} row(s) have a currency that does not match ${currency}. Use a single currency and select it above.`);
   if (!records.length) throw new Error('No usable rows found. Check your column choices, dates (YYYY-MM-DD or MM/DD/YYYY), and numbers.');
   records.sort((a,b) => a.date.localeCompare(b.date));
-  return {records, errors, currency, mapped: Object.fromEntries(METRICS.map(k => [k, mapping[k] >= 0]))};
+  return {records, errors, currency, duplicates, mapped: Object.fromEntries(METRICS.map(k => [k, mapping[k] >= 0]))};
 }
 export function summarize(rows) {
   const result = {count:rows.length};

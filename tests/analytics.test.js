@@ -25,3 +25,14 @@ test('date windows anchor to latest date and compare equal prior period',()=>{
 test('bad rows are counted and displayed; duplicate mappings are rejected',()=>{
  const p=parseCSV('date,channel,spend\n2026-01-01,Email,10\nnot-a-date,Email,20');const m=suggestMapping(p.headers);const x=normalizeData(p,m);assert.equal(x.records.length,1);assert.equal(x.errors[0].reason,'invalid date');assert.throws(()=>normalizeData(p,{...m,revenue:m.spend}),/only be mapped once/);
 });
+test('Google Ads-style report uses a user-specified channel and excludes identifiable summary rows',()=>{
+ const p=parseCSV('Day,Campaign,Cost,Conversions,Conv. value\n2026-10-01,Autumn,100,8,400\n2026-10-01,Total: Account,100,8,400');
+ const m={...suggestMapping(p.headers),revenue:4};const x=normalizeData(p,m,'USD',{defaultChannel:'Google Ads — Search'});
+ assert.equal(x.records.length,1);assert.equal(x.records[0].channel,'Google Ads — Search');assert.equal(x.errors[0].reason,'summary row (excluded)');assert.equal(summarize(x.records).revenue,400);
+});
+test('duplicate records are warned about and not removed automatically',()=>{
+ const p=parseCSV('Date,Channel,Spend\n2026-10-01,Search,10\n2026-10-01,Search,10');const x=normalizeData(p,suggestMapping(p.headers));assert.equal(x.duplicates,1);assert.equal(x.records.length,2);
+});
+test('click and impression columns import without manufacturing revenue or spend',()=>{
+ const p=parseCSV('Day,Channel,Clicks,Impr.\n2026-10-01,Display,22,900');const x=normalizeData(p,suggestMapping(p.headers));const sum=summarize(x.records);assert.equal(sum.clicks,22);assert.equal(sum.impressions,900);assert.equal(sum.revenue,null);assert.equal(sum.roas,null);
+});
