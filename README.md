@@ -26,3 +26,7 @@ Data stays in the browser's memory during the current session and is not sent to
 ## Development and deployment
 
 No build or dependency installation is required to serve `public/` as static files. Run `npm run check` and `npm test` with a recent Node.js. `wrangler.jsonc` deploys `public/` as static assets to the `waddle-dash` Worker. The connected Cloudflare Workers Builds configuration deploys pushes to `main` with `npx wrangler deploy`. The Worker has no server-side code or data bindings.
+
+## Cozy workspace update
+
+The workspace includes a guided first-run panel, a Channels comparison, a Data & settings page, campaign sorting, a choice of chart metrics, and an import preview. The illustrated landscape is an AI-generated decorative asset. The mascot is an original SVG. Reporting remains local to the browser and Ask Waddle continues to use transparent rule-based answers.
