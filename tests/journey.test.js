@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDemoDataset,createDemoCheckin,makePlanDraft,formatPlan} from '../public/journey.js';
+import {createDemoDataset,createDemoCheckin,makePlanDraft,formatPlan,planForReportFromSnapshot} from '../public/journey.js';
 import {filterPeriod} from '../public/analytics.js';
 import {investigate} from '../public/mystery.js';
 import {makeSnapshot,compareSnapshots} from '../public/time-machine.js';
@@ -31,4 +31,12 @@ test('saved snapshot contains independent plan and edited report without migrati
 });
 test('check-in prevents incompatible sources, currencies, definitions and overlapping dates',()=>{
  const [a,b]=createDemoCheckin(createDemoDataset());let x=structuredClone(b);x.data.currency='EUR';assert.match(compareSnapshots(a,x).error,/Currencies/);x=structuredClone(b);x.data.source='different';assert.match(compareSnapshots(a,x).error,/sources/);x=structuredClone(b);x.data.conversionDefinition='bookings';assert.match(compareSnapshots(a,x).error,/definitions differ/);x=structuredClone(b);x.start=a.end;assert.match(compareSnapshots(a,x).error,/overlap/);
+});
+
+test('check-in can supply a missing report plan without overwriting an edit or active plan',()=>{
+ const snap={plan:{noticed:'Saved observation',test:'Saved test'}};
+ assert.match(planForReportFromSnapshot({}, {},snap),/Saved test/);
+ assert.equal(planForReportFromSnapshot({experiment:'Existing text'}, {},snap),null);
+ assert.equal(planForReportFromSnapshot({experiment:''}, {},snap),null);
+ assert.equal(planForReportFromSnapshot({}, {test:'Current plan'},snap),null);
 });

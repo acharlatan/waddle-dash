@@ -58,3 +58,9 @@ export function makeCurrentComparison(data,name,goal,plan,report,period){
  if(!data||!period?.current?.length)return null;
  return {id:'session-current',name:`Current session · ${name}`,start:period.start,end:period.end,data:{...data,records:period.current.map(r=>({...r}))},goal,plan:{...plan},report:{...report},status:'current',notes:'Current session report; not saved as a snapshot.'};
 }
+
+// Only suggest the earlier plan when the report and the active plan have never been populated.
+export function planForReportFromSnapshot(report,activePlan,snapshot){
+ if(report?.experiment!==undefined||formatPlan(activePlan))return null;
+ return formatPlan(snapshot?.plan)||null;
+}
