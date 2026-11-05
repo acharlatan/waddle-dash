@@ -21,9 +21,12 @@ export function suggestMapping(headers) {
   }
   return result;
 }
-export function parseCSV(input) {
+// Parse logical CSV records, preserving quoted commas, escaped quotes and multiline fields.
+// Record numbers refer to nonempty CSV records, not physical lines.
+export function parseCSVRows(input) {
   const text = String(input).replace(/^\ufeff/, '');
   const rows = []; let row = [], field = '', quoted = false, afterQuote = false;
+  const finish = () => { row.push(field); if (row.some(c => c.trim() !== '')) rows.push(row); row = []; field = ''; afterQuote = false; };
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     if (quoted) {
@@ -32,20 +35,41 @@ export function parseCSV(input) {
       else field += ch;
     } else if (ch === '"' && field.length === 0 && !afterQuote) quoted = true;
     else if (ch === ',') { row.push(field); field = ''; afterQuote = false; }
-    else if (ch === '\n' || ch === '\r') {
-      if (ch === '\r' && text[i + 1] === '\n') i++;
-      row.push(field); if (row.some(c => c.trim() !== '')) rows.push(row);
-      row = []; field = ''; afterQuote = false;
-    } else if (afterQuote && !/\s/.test(ch)) throw new Error('The CSV contains unexpected characters after a closing quote.');
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; finish(); }
+    else if (afterQuote && !/\s/.test(ch)) throw new Error('The CSV contains unexpected characters after a closing quote.');
     else if (!afterQuote) field += ch;
   }
   if (quoted) throw new Error('The CSV has an unclosed quoted field.');
-  row.push(field); if (row.some(c => c.trim() !== '')) rows.push(row);
-  if (rows.length < 2) throw new Error('Add a header row and at least one data row to your CSV.');
-  if (rows.length > 30001) throw new Error('This file has more than 30,000 data rows. Please split it into smaller files.');
-  const headers = rows.shift().map((h, i) => h.trim() || `Column ${i + 1}`);
+  finish();
+  if (rows.length < 2) throw new Error('Add a header row and at least one data record to your CSV.');
+  // Allow at most 100 introductory records in addition to the existing 30,000 data limit.
+  if (rows.length > 30101) throw new Error('This file has more than 30,000 data records plus 100 introductory records. Please split it into smaller files.');
+  return rows;
+}
+export function suggestHeaderRow(rows) {
+  let best = 0, bestScore = 0;
+  for (const [i,row] of rows.slice(0,100).entries()) {
+    const m = suggestMapping(row);
+    const n = METRICS.filter(k => m[k] >= 0).length;
+    const score = (m.date >= 0 ? 5 : 0) + n * 2 + (m.channel >= 0 ? 1 : 0) + (m.campaign >= 0 ? 1 : 0);
+    if (m.date >= 0 && n && score > bestScore) { best = i; bestScore = score; }
+  }
+  return best;
+}
+export function selectCSVHeader(allRows, headerRow=0) {
+  if (!Number.isInteger(headerRow) || headerRow < 0 || headerRow >= Math.min(allRows.length - 1,100)) throw new Error('Choose a header record with at least one record after it.');
+  const headers = allRows[headerRow].map((h,i) => h.trim() || `Column ${i + 1}`);
   if (headers.length > 150) throw new Error('This file has more than 150 columns. Please remove unnecessary columns.');
-  return {headers, rows};
+  const rows = allRows.slice(headerRow + 1);
+  if (rows.length > 30000) throw new Error('This file has more than 30,000 data records. Please split it into smaller files.');
+  return {headers, rows, headerRow};
+}
+export function parseCSV(input, headerRow=0) { return selectCSVHeader(parseCSVRows(input), headerRow); }
+export function looksLikeContactList(headers) {
+  const names = headers.map(cleanHeader);
+  const contacts = ['email','email address','first name','last name','contact id','lifecycle stage','lead status'].filter(k=>names.includes(k)).length;
+  const mapping = suggestMapping(headers);
+  return contacts >= 2 && !METRICS.some(k=>mapping[k]>=0);
 }
 export function parseDate(value) {
   const s = String(value || '').trim(); let y, m, d;
@@ -57,10 +81,22 @@ export function parseDate(value) {
   if (y < 1900 || y > 2100 || dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;
   return dt.toISOString().slice(0, 10);
 }
+const DOLLAR_CURRENCIES = ['USD','CAD','AUD'];
+// Markers can coexist only when they agree. A bare $ is ambiguous across dollar currencies.
+export function monetaryMarkers(value) {
+  const text = String(value ?? ''); const allowed = [];
+  const specific = /\b(?:USD|CAD|AUD|EUR|GBP|PHP)\b|US\$|CA\$|C\$|AU\$|A\$|€|£|₱|\$/gi;
+  let m; while ((m = specific.exec(text))) {
+    const token = m[0].toUpperCase();
+    allowed.push(token==='$' ? DOLLAR_CURRENCIES : token==='€' ? ['EUR'] : token==='£' ? ['GBP'] : token==='₱' ? ['PHP'] : token==='US$' ? ['USD'] : ['CA$','C$'].includes(token) ? ['CAD'] : ['AU$','A$'].includes(token) ? ['AUD'] : [token]);
+  }
+  const unknown = text.match(/\b[A-Za-z]{3,}\b/g)?.filter(x=>!['USD','CAD','AUD','EUR','GBP','PHP'].includes(x.toUpperCase())) || [];
+  return {allowed, unknown};
+}
 export function parseNumber(value) {
   let s = String(value ?? '').trim(); if (!s) return null;
-  const negative = /^\(.*\)$/.test(s); if (negative) s = s.slice(1, -1);
-  s = s.replace(/[$€£₱\s]/g, '');
+  const negative = /^\(.*\)$/.test(s); if (negative) s = s.slice(1,-1);
+  s = s.replace(/\b(?:USD|CAD|AUD|EUR|GBP|PHP)\b|US\$|CA\$|C\$|AU\$|A\$|[$€£₱\s]/gi, '');
   if (!/^[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d*)?|\.\d+)$/.test(s)) return NaN;
   s = s.replace(/,/g, '');
   const n = Number(s); return Number.isFinite(n) ? (negative ? -Math.abs(n) : n) : NaN;
@@ -68,23 +104,35 @@ export function parseNumber(value) {
 export function normalizeData(parsed, mapping, currency = 'USD', options = {}) {
   const fields = Object.values(mapping).filter(x => Number.isInteger(x) && x >= 0);
   if (new Set(fields).size !== fields.length) throw new Error('Each selected column can only be mapped once.');
-  if (mapping.date < 0 || (mapping.channel < 0 && !String(options.defaultChannel || '').trim()) || !METRICS.some(x => mapping[x] >= 0)) throw new Error('Please select a date, a channel, and at least one metric.');
-  const records = [], errors = [], seen = new Set(); let mismatch = 0, duplicates = 0;
-  for (let index = 0; index < parsed.rows.length; index++) {
-    const raw = parsed.rows[index]; const signature = JSON.stringify(raw); if (seen.has(signature)) duplicates++; else seen.add(signature); const get = field => mapping[field] >= 0 ? (raw[mapping[field]] ?? '').trim() : '';
-    const date = parseDate(get('date')), channel = get('channel') || (mapping.channel < 0 ? String(options.defaultChannel || '').trim() : '');
-    const summaryRow = [get('channel'),get('campaign')].some(x=>/^total(?:\s*[:\-]|\s*$)/i.test(x));
-    const values = Object.fromEntries(METRICS.map(k => [k, mapping[k] >= 0 ? parseNumber(get(k)) : null]));
-    const rowCurrency = get('currency').toUpperCase();
-    if (rowCurrency && rowCurrency !== currency) mismatch++;
-    const reason = summaryRow ? 'summary row (excluded)' : !date ? 'invalid date' : !channel ? 'missing channel' : METRICS.some(k => Number.isNaN(values[k])) ? 'invalid number' : METRICS.every(k => values[k] === null) ? 'no metric values' : null;
-    if (reason) { errors.push({record: index + 1, reason}); continue; }
-    records.push({date, channel:channel.slice(0, 160), campaign:get('campaign').slice(0, 160), ...values});
+  if (!Number.isInteger(mapping.date) || mapping.date < 0 || (!(mapping.channel >= 0) && !String(options.defaultChannel || '').trim()) || !METRICS.some(x => mapping[x] >= 0)) {
+    if (looksLikeContactList(parsed.headers)) throw new Error('This looks like a contact or lead list. Waddle needs a dated campaign-performance report with at least one numeric metric; map compatible columns if available, or export a performance report.');
+    throw new Error('Choose a date, a channel or assigned source, and at least one numeric metric (spend, value, conversions, clicks or impressions).');
   }
-  if (mismatch) throw new Error(`${mismatch} row(s) have a currency that does not match ${currency}. Use a single currency and select it above.`);
-  if (!records.length) throw new Error('No usable rows found. Check your column choices, dates (YYYY-MM-DD or MM/DD/YYYY), and numbers.');
-  records.sort((a,b) => a.date.localeCompare(b.date));
-  return {records, errors, currency, duplicates, mapped: Object.fromEntries(METRICS.map(k => [k, mapping[k] >= 0]))};
+  if (!['USD','CAD','AUD','EUR','GBP','PHP'].includes(currency)) throw new Error('Choose a reporting currency. Waddle cannot infer the meaning of an ambiguous $ symbol or convert currencies.');
+  const records=[], errors=[], seen=new Set(); let duplicates=0, evidenceCount=0, ambiguousDollar=false;
+  for (let index=0; index<parsed.rows.length; index++) {
+    const raw=parsed.rows[index]; const signature=JSON.stringify(raw); if (seen.has(signature)) duplicates++; else seen.add(signature);
+    const get=field=>mapping[field]>=0 ? String(raw[mapping[field]] ?? '').trim() : '';
+    const recordNo=(parsed.headerRow || 0)+index+2;
+    const rowCurrency=get('currency').toUpperCase();
+    if (rowCurrency) { evidenceCount++; if (!/^[A-Z]{3}$/.test(rowCurrency) || rowCurrency!==currency) throw new Error(`Currency conflict at CSV record ${recordNo}: currency column says ${rowCurrency.slice(0,20)}, but ${currency} is selected. Use one currency per file; no conversion is performed.`); }
+    for (const field of ['spend','revenue']) {
+      const text=get(field); if (!text) continue;
+      const found=monetaryMarkers(text);
+      if (found.unknown.length) throw new Error(`Unrecognized currency marker at CSV record ${recordNo} in ${field}: ${found.unknown[0].slice(0,20)}. Use a supported code or remove the marker after verifying the currency.`);
+      for (const allowed of found.allowed) { evidenceCount++; if (allowed.length>1) ambiguousDollar=true; if (!allowed.includes(currency)) throw new Error(`Currency conflict at CSV record ${recordNo} in ${field}: the amount's currency does not match ${currency}. Check the currency symbol or code; Waddle cannot combine or convert currencies.`); }
+    }
+    const date=parseDate(get('date')), channel=get('channel') || (mapping.channel<0 ? String(options.defaultChannel || '').trim() : '');
+    const summaryRow=raw.some(cell=>/^(?:grand\s+total|account\s+total|campaign\s+total|total(?:\s*[:\-]|\s+campaigns\s*$|\s*$)|all\s+campaigns$|all\s+channels$)/i.test(String(cell).trim()));
+    const values=Object.fromEntries(METRICS.map(k=>[k,mapping[k]>=0 ? parseNumber(get(k)) : null]));
+    const reason=summaryRow ? 'summary row (excluded)' : !date ? 'invalid date' : !channel ? 'missing channel' : METRICS.some(k=>Number.isNaN(values[k])) ? 'invalid number' : METRICS.every(k=>values[k]===null) ? 'no metric values' : null;
+    if (reason) { errors.push({record:index+1,csvRecord:recordNo,reason}); continue; }
+    records.push({date,channel:channel.slice(0,160),campaign:get('campaign').slice(0,160),...values});
+  }
+  if (!records.length) throw new Error('No usable rows found. Review the header, mappings, date format (YYYY-MM-DD or MM/DD/YYYY), and numeric values.');
+  records.sort((a,b)=>a.date.localeCompare(b.date));
+  const currencyNote=!evidenceCount ? `No currency markers were found; ${currency} is user-selected and cannot be verified from the file.` : ambiguousDollar ? `A bare $ can represent USD, CAD or AUD. You selected ${currency}; Waddle cannot verify which dollar currency the file means.` : `Explicit currency markers are consistent with ${currency}; Waddle does not convert currencies.`;
+  return {records, errors, currency, duplicates, mapped:Object.fromEntries(METRICS.map(k=>[k,mapping[k]>=0])),currencyCheckVersion:1,currencyNote};
 }
 export function summarize(rows) {
   const result = {count:rows.length};
@@ -113,4 +161,33 @@ export function groupBy(rows, key) {
 export function percentChange(current, previous) {
   if (current === null || previous === null || previous === 0) return null;
   return (current - previous) / Math.abs(previous) * 100;
+}
+
+// Date coverage is evidence of recorded rows only, never proof of a complete export.
+export function dateCoverage(rows, start, end) {
+  const days = start && end ? Math.floor((Date.parse(end+'T00:00:00Z') - Date.parse(start+'T00:00:00Z')) / 86400000) + 1 : 0;
+  const observed = new Set(rows.map(r=>r.date).filter(d=>d>=start && d<=end));
+  const dates=[...observed].sort(),missingDays=Math.max(0,days-observed.size),missingDates=[];
+  if(missingDays && start && end){const cursor=new Date(start+'T00:00:00Z'),last=Date.parse(end+'T00:00:00Z');while(cursor.getTime()<=last&&missingDates.length<14){const iso=cursor.toISOString().slice(0,10);if(!observed.has(iso))missingDates.push(iso);cursor.setUTCDate(cursor.getUTCDate()+1)}}
+  return {days:Math.max(0,days),recordedDays:observed.size,missingDays,missingDates,first:dates[0]||null,last:dates.at(-1)||null};
+}
+export function comparisonCoverage(previous, current, days, datasets=[]) {
+  const reasons=[], differences=[];
+  if (!Number.isFinite(Number(days)) || Number(days)<1 || !previous.length || !current.length) return {safe:false,reasons:['Two equal date windows with recorded data are needed.'],differences};
+  const n=Number(days), prevDates=new Set(previous.map(r=>r.date)), curDates=new Set(current.map(r=>r.date));
+  if(datasets.some(d=>(d?.errors||[]).some(e=>e.reason!=='summary row (excluded)'))) reasons.push('The import excluded invalid records, so period totals may be incomplete. Correct the source file and reimport to compare safely.');
+  if(datasets.some(d=>(d?.duplicates||0)>0)) reasons.push('The import retained exact duplicate records; review and remove any unintended duplicates before comparing.');
+  if (prevDates.size!==n || curDates.size!==n) reasons.push('Both periods need recorded rows on every date; days without rows are not treated as zero.');
+  // Channel + campaign preserves distinct names across channels; unassigned campaigns are never invented.
+  const group=rows=>{const map=new Map();for(const row of rows){const channel=String(row.channel||'').trim(), campaign=String(row.campaign||'').trim();const key=JSON.stringify([channel,campaign]);if(!map.has(key))map.set(key,{channel,campaign,dates:new Set()});map.get(key).dates.add(row.date)}return map};
+  const a=group(previous),b=group(current);
+  for(const key of new Set([...a.keys(),...b.keys()])){
+    const old=a.get(key),recent=b.get(key),g=old||recent;
+    const label=g.campaign ? `${g.campaign} (${g.channel||'unknown channel'})` : `${g.channel||'Unknown channel'} (campaign not specified)`;
+    if(!old||!recent) differences.push(`${label}: ${!old?'not recorded in the earlier period':'not recorded in the later period'}`);
+    else if(old.dates.size!==n||recent.dates.size!==n) differences.push(`${label}: rows recorded on ${old.dates.size}/${n} earlier days and ${recent.dates.size}/${n} later days`);
+  }
+  if(differences.length) reasons.push('Campaign or channel coverage differs or is incomplete. Missing rows are not zeros: the difference could reflect an export filter, a new or paused campaign, or another cause.');
+  if([...previous,...current].some(r=>!String(r.campaign||'').trim()) && [...previous,...current].some(r=>String(r.campaign||'').trim())) reasons.push('Some records have campaign names and others do not, so campaign coverage cannot be verified.');
+  return {safe:reasons.length===0,reasons,differences};
 }

@@ -1,4 +1,4 @@
-import {summarize} from './analytics.js';
+import {summarize, comparisonCoverage, dateCoverage} from './analytics.js';
 export const STORAGE_KEY='waddle-time-machine-v1';
 export function makeSnapshot({records,data,name,goal,plan,report,caseType,start,end}) {
  if(!records.length) throw new Error('There are no records in the selected period to save.');
@@ -13,7 +13,10 @@ export function compareSnapshots(a,b) {
  if(a.data.source!==b.data.source || a.data.valueKind!==b.data.valueKind) return {error:'The sources or value definitions differ. Choose reports with matching source and value type.'};
  const days=s=>(Date.parse(s.end+'T00:00:00Z')-Date.parse(s.start+'T00:00:00Z'))/86400000+1;
  if(days(a)!==days(b))return {error:'These periods have different lengths. Save equal-length reporting periods for a fairer comparison.'};
- for(const s of [a,b]) if(new Set(s.data.records.map(r=>r.date)).size!==days(s)) return {error:'At least one period has missing dates. A recorded date still does not prove the export is complete.'};
+ for(const s of [a,b]) {const c=dateCoverage(s.data.records,s.start,s.end);if(c.recordedDays!==days(s) || s.data.records.some(r=>r.date<s.start||r.date>s.end))return {error:'At least one period has missing dates or rows outside its selected window. A recorded date still does not prove the export is complete.'};}
+ if(a.data.currencyCheckVersion!==1 || b.data.currencyCheckVersion!==1) return {error:'At least one snapshot predates currency-symbol checks. Its data remains saved, but the original currency markers cannot be verified; reimport the original reports and save new snapshots to compare safely.'};
+ const coverage=comparisonCoverage(a.data.records,b.data.records,days(a),[a.data,b.data]);
+ if(!coverage.safe)return {error:[...coverage.reasons,...coverage.differences.slice(0,5)].join(' ')};
  const old=summarize(a.data.records), recent=summarize(b.data.records);
  const complete=(s,k)=>s.count>0&&s[`${k}Coverage`]===s.count;
  const metrics=['spend','revenue','conversions','clicks','impressions'].filter(k=>complete(old,k)&&complete(recent,k));
