@@ -28,6 +28,14 @@ Mystery Lab ranks comparable named campaign-and-channel groups by recorded conve
 
 Time Machine retains the existing storage structure. New snapshots carry an additive currency-check marker. Older snapshots remain accessible and are not changed or deleted, but comparisons involving snapshots from before the currency-symbol check are paused because the original symbols cannot be reconstructed. Reimport the original reports and save new snapshots to compare them safely. Conversion definitions are also stored as an additive optional field: incompatible confirmed definitions block snapshot comparisons; when a definition is unknown, conversion counts, cost per conversion and platform conversion value are withheld. Older snapshots are not migrated or modified.
 
+## A connected investigation and check-in
+
+The fictional demo opens on a two-week lead-generation example: conversions fall while spend stays level. Mystery Lab can create an editable experiment draft with the observed campaign, channel, dates, recorded numbers, a tentative hypothesis, a possible test, measures, review period and limitations. The user can copy the plan or append it to the editable report; Waddle does not run a test or change an account.
+
+In Time Machine, users explicitly opt in to browser storage, then choose to save a snapshot of the selected period together with their plan and report. Snapshots can be marked planned, ongoing or finished and have check-in notes. Existing version 1 snapshots remain unchanged; no migration is required. Malformed or unsupported storage is locked against writes, and storage errors leave the existing archive unchanged. A later check-in can compare two saved snapshots or a saved snapshot and the selected period of the current unsaved report. The user must confirm account, conversion definition, attribution and report scope before viewing changes; confirmation is not evidence of complete exports or causation.
+
+Demo snapshots stay in memory and are isolated from the personal archive. Its check-in example uses the observed baseline week and an illustrative next week that repeats its figures; this is not a real later report or a completed experiment. Report observations, investigation, experiment, check-in and notes are separate editable sections. Appending to a section that already contains text asks for confirmation. Printing uses the browser print dialog and never automatically publishes or shares the report.
+
 The experiment planner is editable and copyable. Waddle Report allows editing observations, plan and notes. **Print / Save as PDF** opens the browser print dialog; it does not create or upload a PDF itself. No report is sent or shared automatically. There is no background sync, cloud storage, AI service, or automated budget change. Users should review results and ensure conversion definitions match their goals.
 
 ## Run and deploy

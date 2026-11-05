@@ -1,10 +1,10 @@
 import {summarize, comparisonCoverage, dateCoverage} from './analytics.js';
 import {normalizeDefinition} from './marketing.js';
-export const STORAGE_KEY='waddle-time-machine-v1';
+export {STORAGE_KEY} from './archive.js';
 export function makeSnapshot({records,data,name,goal,plan,report,caseType,start,end}) {
  if(!records.length) throw new Error('There are no records in the selected period to save.');
  const dates=records.map(r=>r.date).sort();
- return {id:globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,savedAt:new Date().toISOString(),name,goal,plan:{...plan},report:{...report},caseType:caseType||'',data:{...data,records:records.map(r=>({...r}))},start:start||dates[0],end:end||dates.at(-1),status:'ongoing',notes:''};
+ return {id:globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,savedAt:new Date().toISOString(),name,goal,plan:{...plan},report:{...report},caseType:caseType||'',data:{...data,records:records.map(r=>({...r}))},start:start||dates[0],end:end||dates.at(-1),status:'planned',notes:''};
 }
 export function compareSnapshots(a,b) {
  if(!a||!b||a.id===b.id) return {error:'Choose two different saved snapshots.'};
