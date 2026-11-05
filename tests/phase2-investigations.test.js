@@ -21,7 +21,7 @@ test('fictional two-campaign lead report finds Generic Search, with correct spen
  assert.equal(r.top.previous.conversions,56);assert.equal(r.top.current.conversions,21);
  assert.equal(r.top.previous.spend,700);assert.equal(r.top.current.spend,700);
  near(r.top.previousCost,12.5);near(r.top.currentCost,700/21);
- assert.match(r.next,/56 → 21/);assert.match(r.next,/\$700\.00 → \$700\.00/);assert.match(r.next,/do not establish the cause/);
+ assert.match(r.next,/largest recorded conversion decrease/);assert.match(r.next,/56 → 21/);assert.match(r.next,/\$700\.00 → \$700\.00/);assert.match(r.next,/do not establish the cause/);
  assert.equal(data.records.every(x=>x.revenue===null),true);
 });
 test('lead goal has useful volume and cost without revenue',()=>{
@@ -69,7 +69,7 @@ test('no meaningful campaign change returns no specific campaign recommendation'
  const rows=imported().records.map(r=>({...r,conversions:r.campaign==='Generic Search'?8:7})),r=run(rows);assert.equal(r.top,undefined);assert.match(r.next,/No named campaign/);
 });
 test('campaign spending gives valid shares and explains complete coverage',()=>{
- const rows=imported().records,r=run(rows,'spending');const generic=r.facts.find(x=>x.label==='Generic Search');near(generic.share,700/1190*100);assert.equal(generic.conversions,21);near(generic.cost,700/21);assert.doesNotMatch(r.next,/cut/i);
+ const rows=imported().records,r=run(rows,'spending');const generic=r.facts.find(x=>x.label==='Generic Search');near(generic.share,700/1190*100);assert.equal(generic.conversions,21);near(generic.cost,700/21);assert.doesNotMatch(r.next,/cut/i);assert.match(r.next,/largest recorded spend/);
 });
 test('conversion definitions cannot silently conflict across saved snapshots',()=>{
  const d=imported(),p=filterPeriod(d.records,'7');const snap=(records,definition)=>makeSnapshot({records,data:{...d,conversionDefinition:definition},name:'Fictional',goal:'Leads or inquiries',plan:{},report:{},start:records[0].date,end:records.at(-1).date});
@@ -90,4 +90,9 @@ test('sales ROAS is withheld for negative adjustments, and website activity excl
  assert.equal(s.roas,null);
  const activity=metricSummary([{spend:null,revenue:null,conversions:null,clicks:10,impressions:null}],'unknown');
  assert.deepEqual(goalMetricKeys('Website activity',activity),['clicks']);
+});
+
+test('cost-only clue explains the ordering and is not a cause',()=>{
+ const rows=imported().records.map(r=>({...r,spend:r.date>='2026-10-08'&&r.campaign==='Generic Search'?200:r.spend,conversions:r.campaign==='Generic Search'?8:7}));
+ const r=run(rows);assert.equal(r.top.label,'Generic Search');assert.match(r.next,/ordered by conversion change, then cost change/);assert.match(r.next,/do not establish the cause/);
 });
