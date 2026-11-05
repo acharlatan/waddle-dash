@@ -1,26 +1,46 @@
-import {summarize, groupBy, addDays, comparisonCoverage} from './analytics.js';
+import {summarize, addDays, comparisonCoverage, percentChange} from './analytics.js';
 
-// Only compare complete, equal calendar windows; presence of a date cannot prove a complete export.
+const complete=(s,k)=>s.count>0 && s[`${k}Coverage`]===s.count;
+const nonNegative=(rows,fields)=>rows.every(r=>fields.every(k=>r[k]===null||r[k]===undefined||r[k]>=0));
+const number=n=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:6}).format(n):'unavailable';
+const money=(n,currency='USD')=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:2}).format(n):'unavailable';
+const validCost=(s,rows)=>complete(s,'spend')&&complete(s,'conversions')&&nonNegative(rows,['spend','conversions'])&&s.conversions>0 ? s.spend/s.conversions : null;
+const qualityIssue=data=>(data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)');
+
+// Group by both campaign and channel, so same-named campaigns do not merge.
+export function campaignGroups(rows) {
+ const groups=new Map();
+ for(const row of rows){const channel=String(row.channel||'').trim(),campaign=String(row.campaign||'').trim();const id=JSON.stringify([channel,campaign]);if(!groups.has(id))groups.set(id,{id,channel,campaign,rows:[]});groups.get(id).rows.push(row)}
+ return [...groups.values()].map(g=>({...g,label:g.campaign||'Unassigned campaign',summary:summarize(g.rows)}));
+}
 export function investigate(type, period, days, data=null) {
-  const rows=period.current, current=summarize(rows), previous=summarize(period.previous);
-  if (!rows.length) return {error:'Add a supported report or explore the demo to open a case.'};
-  const complete=(s,k)=>s.count>0 && s[`${k}Coverage`]===s.count;
-  if(type==='spending') {
-    if (!rows.some(r=>r.campaign)) return {error:'Add a Campaign column with campaign names to investigate spending.'};
-    if (!complete(current,'spend')) return {error:'This case needs a spend value on every selected row. Add the missing spend values to your report.'};
-    const groups=groupBy(rows,'campaign').sort((a,b)=>b.spend-a.spend);
-    return {title:'The campaign spending case', facts:groups.map(g=>({label:g.label,value:g.spend,rows:g.count})), total:current.spend, current, note:'Recorded spend by campaign. Campaigns with the same name are grouped across channels; unnamed rows are grouped together.', next:'Review the highest-spending campaign and check its results before considering a budget change.'};
-  }
-  const required=type==='expensive'?['spend','conversions']:['conversions'];
-  if(days==='all') return {error:'Choose 7, 30, or 90 days to compare two equal periods.'};
-  const n=Number(days), start=period.start, previousStart=addDays(start,-n), previousEnd=addDays(start,-1);
-  if(new Set(rows.map(r=>r.date)).size!==n || new Set(period.previous.map(r=>r.date)).size!==n) return {error:`This case needs records for every day in both ${n}-day windows. Add the missing dates or choose another date range. A recorded day alone does not guarantee a complete export.`};
-  const coverage=comparisonCoverage(period.previous,rows,n,data?[data]:[]);
-  if(!coverage.safe) return {error:[...coverage.reasons,...coverage.differences.slice(0,5)].join(' ')+(coverage.differences.length>5?` and ${coverage.differences.length-5} more groups.`:'')};
-  const missing=required.filter(k=>!complete(current,k)||!complete(previous,k));
-  if(missing.length) return {error:`This case needs ${missing.join(' and ')} on every row in both periods. Add the missing values to your report.`};
-  if(type==='expensive' && (current.conversions<=0 || previous.conversions<=0)) return {error:'Cost per conversion needs a positive conversion total in each period. Check the conversion values or choose another case.'};
-  const names=[...new Set([...rows,...period.previous].map(r=>r.campaign).filter(Boolean))];
-  const changes=names.map(label=>{let a=summarize(rows.filter(r=>r.campaign===label)),b=summarize(period.previous.filter(r=>r.campaign===label));return {label,current:a,previous:b};}).filter(g=>g.current.count&&g.previous.count&&required.every(k=>complete(g.current,k)&&complete(g.previous,k))).sort((a,b)=>type==='results'?(a.current.conversions-a.previous.conversions)-(b.current.conversions-b.previous.conversions):(b.current.spend-b.previous.spend)-(a.current.spend-a.previous.spend));
-  return {title:type==='expensive'?'The expensive conversions case':'The disappearing results case',current,previous,previousStart,previousEnd,changes, note:'Both windows have recorded rows for the observed groups on each date and complete required fields. This does not prove the export includes every campaign or conversion.',next:type==='expensive'?'Review campaigns with the largest recorded spend increases and check their conversion counts.':'Review campaigns with the largest recorded conversion decreases, then check tracking and context.'};
+ const rows=period.current||[], oldRows=period.previous||[], current=summarize(rows), previous=summarize(oldRows);
+ if(!rows.length)return {error:'Add a supported report or explore the demo to open a case.'};
+ const currency=data?.currency||'USD';
+ if(type==='spending'){
+  if(!rows.some(r=>r.campaign))return {error:'Add a Campaign column with campaign names to investigate spending.'};
+  const groups=campaignGroups(rows), clean=!qualityIssue(data), full=complete(current,'spend')&&clean, nonnegative=nonNegative(rows,['spend']);
+  const canShare=full&&nonnegative&&current.spend>0;
+  const facts=groups.map(g=>({label:g.label,campaign:g.campaign,channel:g.channel,value:g.summary.spend,rows:g.summary.count,spendCoverage:g.summary.spendCoverage,conversions:g.summary.conversions,conversionCoverage:g.summary.conversionsCoverage,cost:validCost(g.summary,g.rows),share:canShare&&g.summary.spend!==null?g.summary.spend/current.spend*100:null,partial:!complete(g.summary,'spend')})).sort((a,b)=>(b.value??-Infinity)-(a.value??-Infinity)||a.label.localeCompare(b.label));
+  const top=full&&nonnegative?facts.find(x=>x.value>0):null;
+  const next=top?`Review ${top.label} (${top.channel||'unknown channel'}): recorded spend is ${money(top.value,currency)}${top.cost!==null?` and recorded cost per conversion is ${money(top.cost,currency)}`:''}. Check results and context before considering a budget change.`:'Review missing or adjusted spend values and import warnings before comparing campaigns or budgets.';
+  return {title:'The campaign spending case',facts,total:current.spend,current,full,canShare,next,note:`Spend is present on ${current.spendCoverage} of ${current.count} records.${!clean?' Invalid or duplicate records make coverage uncertain.':''}${!nonnegative?' Negative adjustments mean spend shares are unavailable.':''} Campaigns are separated by channel; recorded totals may not represent every campaign.`};
+ }
+ const required=type==='expensive'?['spend','conversions']:['conversions'];
+ if(days==='all')return {error:'Choose 7, 30, or 90 days to compare two equal periods.'};
+ const n=Number(days),previousStart=addDays(period.start,-n),previousEnd=addDays(period.start,-1);
+ if(new Set(rows.map(r=>r.date)).size!==n||new Set(oldRows.map(r=>r.date)).size!==n)return {error:`This case needs records for every day in both ${n}-day windows. Add the missing dates or choose another date range. A recorded day alone does not guarantee a complete export.`};
+ const coverage=comparisonCoverage(oldRows,rows,n,data?[data]:[]);
+ if(!coverage.safe)return {error:[...coverage.reasons,...coverage.differences.slice(0,5)].join(' ')+(coverage.differences.length>5?` and ${coverage.differences.length-5} more groups.`:''),coverage};
+ const missing=required.filter(k=>!complete(current,k)||!complete(previous,k));
+ if(missing.length)return {error:`This case needs ${missing.join(' and ')} on every row in both periods. Add the missing values to your report.`};
+ if(!nonNegative([...oldRows,...rows],required))return {error:'The required metrics contain negative adjustments. Review those adjustments before interpreting changes or cost per conversion; Waddle cannot safely rank these campaigns.'};
+ if(type==='expensive'&&(current.conversions<=0||previous.conversions<=0))return {error:'Cost per conversion needs a positive conversion total in each period. Check the conversion values or choose another case.'};
+ const prior=new Map(campaignGroups(oldRows).map(g=>[g.id,g]));
+ const changes=campaignGroups(rows).flatMap(g=>{const old=prior.get(g.id);if(!old||!g.campaign)return [];const a=g.summary,b=old.summary;if(!required.every(k=>complete(a,k)&&complete(b,k)))return [];const before=validCost(b,old.rows),after=validCost(a,g.rows);return [{label:g.campaign,campaign:g.campaign,channel:g.channel,previous:b,current:a,previousCost:before,currentCost:after,conversionDelta:a.conversions-b.conversions,costDelta:before!==null&&after!==null?after-before:null}];});
+ // Largest recorded conversion decrease first, then greatest increase in cost per conversion.
+ changes.sort((a,b)=>a.conversionDelta-b.conversionDelta||(b.costDelta??-Infinity)-(a.costDelta??-Infinity)||a.label.localeCompare(b.label));
+ const top=changes.find(g=>g.conversionDelta<0 || (type==='expensive'&&g.costDelta!==null&&g.costDelta>0));
+ let next=top?`Review ${top.label} (${top.channel||'unknown channel'}): recorded conversions ${number(top.previous.conversions)} → ${number(top.current.conversions)}${type==='expensive'?`, spend ${money(top.previous.spend,currency)} → ${money(top.current.spend,currency)}`:''}${top.previousCost!==null&&top.currentCost!==null?`, cost per conversion ${money(top.previousCost,currency)} → ${money(top.currentCost,currency)}`:''}. Check tracking, traffic or landing-page changes; these data do not establish the cause.`:`No named campaign has a recorded conversion decrease${type==='expensive'?' or a higher calculable cost per conversion':''}. Check coverage and context before choosing a test.`;
+ return {title:type==='expensive'?'The expensive conversions case':'The disappearing results case',current,previous,previousStart,previousEnd,changes,top,previousCost:validCost(previous,oldRows),currentCost:validCost(current,rows),percentChanges:{spend:percentChange(current.spend,previous.spend),conversions:percentChange(current.conversions,previous.conversions),cost:percentChange(validCost(current,rows),validCost(previous,oldRows))},note:'Both windows contain recorded rows for the observed campaign and channel groups on each date, with the required values. This does not prove the export includes every campaign or conversion or identify what caused a change.',next};
 }
