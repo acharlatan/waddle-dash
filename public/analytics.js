@@ -109,6 +109,8 @@ export function normalizeData(parsed, mapping, currency = 'USD', options = {}) {
     throw new Error('Choose a date, a channel or assigned source, and at least one numeric metric (spend, value, conversions, clicks or impressions).');
   }
   if (!['USD','CAD','AUD','EUR','GBP','PHP'].includes(currency)) throw new Error('Choose a reporting currency. Waddle cannot infer the meaning of an ambiguous $ symbol or convert currencies.');
+  const extraIndex=parsed.rows.findIndex(row=>row.length>parsed.headers.length);
+  if(extraIndex>=0) throw new Error(`CSV record ${(parsed.headerRow||0)+extraIndex+2} has more fields than the selected header. Choose the correct header or fix extra delimiters (quote numbers containing commas) before importing.`);
   const records=[], errors=[], seen=new Set(); let duplicates=0, evidenceCount=0, ambiguousDollar=false;
   for (let index=0; index<parsed.rows.length; index++) {
     const raw=parsed.rows[index]; const signature=JSON.stringify(raw); if (seen.has(signature)) duplicates++; else seen.add(signature);
