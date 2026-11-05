@@ -36,10 +36,11 @@ export function parseCSVRows(input) {
     } else if (ch === '"' && field.length === 0 && !afterQuote) quoted = true;
     else if (ch === ',') { row.push(field); field = ''; afterQuote = false; }
     else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; finish(); }
-    else if (afterQuote && !/\s/.test(ch)) throw new Error('The CSV contains unexpected characters after a closing quote.');
+    else if (afterQuote && !/\s/.test(ch)) throw new Error(`CSV record ${rows.length+1} contains unexpected characters after a closing quote. Check the field delimiter and escape embedded quotes by doubling them.`);
+    else if (ch === '"' && !afterQuote) throw new Error(`CSV record ${rows.length+1} contains an unexpected quote. Enclose the whole field in quotes and double any embedded quotes.`);
     else if (!afterQuote) field += ch;
   }
-  if (quoted) throw new Error('The CSV has an unclosed quoted field.');
+  if (quoted) throw new Error('The CSV has an unclosed quoted field. Close the quoted field and double any quotes inside it.');
   finish();
   if (rows.length < 2) throw new Error('Add a header row and at least one data record to your CSV.');
   // Allow at most 100 introductory records in addition to the existing 30,000 data limit.
@@ -84,14 +85,14 @@ export function parseDate(value) {
 const DOLLAR_CURRENCIES = ['USD','CAD','AUD'];
 // Markers can coexist only when they agree. A bare $ is ambiguous across dollar currencies.
 export function monetaryMarkers(value) {
-  const text = String(value ?? ''); const allowed = [];
+  const text = String(value ?? ''); const allowed = [], tokens = [];
   const specific = /(?<![A-Za-z])(?:USD|CAD|AUD|EUR|GBP|PHP)(?![A-Za-z])|US\$|CA\$|C\$|AU\$|A\$|€|£|₱|\$/gi;
   let m; while ((m = specific.exec(text))) {
-    const token = m[0].toUpperCase();
+    const token = m[0].toUpperCase(); tokens.push(m[0]);
     allowed.push(token==='$' ? DOLLAR_CURRENCIES : token==='€' ? ['EUR'] : token==='£' ? ['GBP'] : token==='₱' ? ['PHP'] : token==='US$' ? ['USD'] : ['CA$','C$'].includes(token) ? ['CAD'] : ['AU$','A$'].includes(token) ? ['AUD'] : [token]);
   }
   const unknown = text.match(/(?<![A-Za-z])[A-Za-z]{3,}(?![A-Za-z])/g)?.filter(x=>!['USD','CAD','AUD','EUR','GBP','PHP'].includes(x.toUpperCase())) || [];
-  return {allowed, unknown};
+  return {allowed, unknown, tokens};
 }
 export function parseNumber(value) {
   let s = String(value ?? '').trim(); if (!s) return null;
@@ -111,9 +112,9 @@ export function normalizeData(parsed, mapping, currency = 'USD', options = {}) {
   if (!['USD','CAD','AUD','EUR','GBP','PHP'].includes(currency)) throw new Error('Choose a reporting currency. Waddle cannot infer the meaning of an ambiguous $ symbol or convert currencies.');
   const extraIndex=parsed.rows.findIndex(row=>row.length>parsed.headers.length);
   if(extraIndex>=0) throw new Error(`CSV record ${(parsed.headerRow||0)+extraIndex+2} has more fields than the selected header. Choose the correct header or fix extra delimiters (quote numbers containing commas) before importing.`);
-  const records=[], errors=[], seen=new Set(); let duplicates=0, evidenceCount=0, ambiguousDollar=false;
+  const records=[], errors=[], seen=new Set(), seenAccepted=new Set(); let duplicates=0, excludedDuplicates=0, evidenceCount=0, ambiguousDollar=false;
   for (let index=0; index<parsed.rows.length; index++) {
-    const raw=parsed.rows[index]; const signature=JSON.stringify(raw); if (seen.has(signature)) duplicates++; else seen.add(signature);
+    const raw=parsed.rows[index]; const signature=JSON.stringify(raw); const alreadySeen=seen.has(signature); seen.add(signature);
     const get=field=>mapping[field]>=0 ? String(raw[mapping[field]] ?? '').trim() : '';
     const recordNo=(parsed.headerRow || 0)+index+2;
     const rowCurrency=get('currency').toUpperCase();
@@ -122,19 +123,20 @@ export function normalizeData(parsed, mapping, currency = 'USD', options = {}) {
       const text=get(field); if (!text) continue;
       const found=monetaryMarkers(text);
       if (found.unknown.length) throw new Error(`Unrecognized currency marker at CSV record ${recordNo} in ${field}: ${found.unknown[0].slice(0,20)}. Use a supported code or remove the marker after verifying the currency.`);
-      for (const allowed of found.allowed) { evidenceCount++; if (allowed.length>1) ambiguousDollar=true; if (!allowed.includes(currency)) throw new Error(`Currency conflict at CSV record ${recordNo} in ${field}: the amount's currency does not match ${currency}. Check the currency symbol or code; Waddle cannot combine or convert currencies.`); }
+      for (const [markerIndex,allowed] of found.allowed.entries()) { evidenceCount++; if (allowed.length>1) ambiguousDollar=true; if (!allowed.includes(currency)) throw new Error(`Currency conflict at CSV record ${recordNo} in ${field}: marker ${found.tokens[markerIndex]} conflicts with selected ${currency}. Correct the marker or choose the matching currency; use one currency per file. Waddle cannot combine or convert currencies.`); }
     }
     const date=parseDate(get('date')), channel=get('channel') || (mapping.channel<0 ? String(options.defaultChannel || '').trim() : '');
     const summaryRow=raw.some(cell=>/^(?:grand\s+total|account\s+total|campaign\s+total|total(?:\s*[:\-]|\s+campaigns\s*$|\s*$)|all\s+campaigns$|all\s+channels$)/i.test(String(cell).trim()));
     const values=Object.fromEntries(METRICS.map(k=>[k,mapping[k]>=0 ? parseNumber(get(k)) : null]));
     const reason=summaryRow ? 'summary row (excluded)' : !date ? 'invalid date' : !channel ? 'missing channel' : METRICS.some(k=>Number.isNaN(values[k])) ? 'invalid number' : METRICS.every(k=>values[k]===null) ? 'no metric values' : null;
-    if (reason) { errors.push({record:index+1,csvRecord:recordNo,reason}); continue; }
+    if (reason) { if(alreadySeen)excludedDuplicates++; const error={record:index+1,csvRecord:recordNo,reason}; if(reason==='invalid number')error.field=METRICS.find(k=>Number.isNaN(values[k])); errors.push(error); continue; }
+    if(seenAccepted.has(signature))duplicates++; else seenAccepted.add(signature);
     records.push({date,channel:channel.slice(0,160),campaign:get('campaign').slice(0,160),...values});
   }
-  if (!records.length) throw new Error('No usable rows found. Review the header, mappings, date format (YYYY-MM-DD or MM/DD/YYYY), and numeric values.');
+  if (!records.length) {const error=new Error('No usable rows found. Review the excluded records below, correct the source file, and select it again.');error.excludedRecords=errors;error.duplicates=duplicates;error.excludedDuplicates=excludedDuplicates;throw error;}
   records.sort((a,b)=>a.date.localeCompare(b.date));
   const currencyNote=!evidenceCount ? `No currency markers were found; ${currency} is user-selected and cannot be verified from the file.` : ambiguousDollar ? `A bare $ can represent USD, CAD or AUD. You selected ${currency}; Waddle cannot verify which dollar currency the file means.` : `Explicit currency markers are consistent with ${currency}; Waddle does not convert currencies.`;
-  return {records, errors, currency, duplicates, mapped:Object.fromEntries(METRICS.map(k=>[k,mapping[k]>=0])),currencyCheckVersion:1,currencyNote};
+  return {records, errors, currency, duplicates, excludedDuplicates, mapped:Object.fromEntries(METRICS.map(k=>[k,mapping[k]>=0])),currencyCheckVersion:1,currencyNote};
 }
 export function summarize(rows) {
   const result = {count:rows.length};

@@ -3,5 +3,5 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/*.test.js", "check": "node --check public/app.js && node --check public/analytics.js && node --check public/mystery.js && node --check public/marketing.js && node --check public/time-machine.js && node --check public/journey.js && node --check public/archive.js" }
+  "scripts": { "test": "node --test tests/*.test.js", "check": "node --check public/app.js && node --check public/analytics.js && node --check public/mystery.js && node --check public/marketing.js && node --check public/time-machine.js && node --check public/journey.js && node --check public/archive.js && node --check public/import-review.js" }
 }
