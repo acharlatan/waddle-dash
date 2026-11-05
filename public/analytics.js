@@ -85,18 +85,18 @@ const DOLLAR_CURRENCIES = ['USD','CAD','AUD'];
 // Markers can coexist only when they agree. A bare $ is ambiguous across dollar currencies.
 export function monetaryMarkers(value) {
   const text = String(value ?? ''); const allowed = [];
-  const specific = /\b(?:USD|CAD|AUD|EUR|GBP|PHP)\b|US\$|CA\$|C\$|AU\$|A\$|€|£|₱|\$/gi;
+  const specific = /(?<![A-Za-z])(?:USD|CAD|AUD|EUR|GBP|PHP)(?![A-Za-z])|US\$|CA\$|C\$|AU\$|A\$|€|£|₱|\$/gi;
   let m; while ((m = specific.exec(text))) {
     const token = m[0].toUpperCase();
     allowed.push(token==='$' ? DOLLAR_CURRENCIES : token==='€' ? ['EUR'] : token==='£' ? ['GBP'] : token==='₱' ? ['PHP'] : token==='US$' ? ['USD'] : ['CA$','C$'].includes(token) ? ['CAD'] : ['AU$','A$'].includes(token) ? ['AUD'] : [token]);
   }
-  const unknown = text.match(/\b[A-Za-z]{3,}\b/g)?.filter(x=>!['USD','CAD','AUD','EUR','GBP','PHP'].includes(x.toUpperCase())) || [];
+  const unknown = text.match(/(?<![A-Za-z])[A-Za-z]{3,}(?![A-Za-z])/g)?.filter(x=>!['USD','CAD','AUD','EUR','GBP','PHP'].includes(x.toUpperCase())) || [];
   return {allowed, unknown};
 }
 export function parseNumber(value) {
   let s = String(value ?? '').trim(); if (!s) return null;
   const negative = /^\(.*\)$/.test(s); if (negative) s = s.slice(1,-1);
-  s = s.replace(/\b(?:USD|CAD|AUD|EUR|GBP|PHP)\b|US\$|CA\$|C\$|AU\$|A\$|[$€£₱\s]/gi, '');
+  s = s.replace(/(?<![A-Za-z])(?:USD|CAD|AUD|EUR|GBP|PHP)(?![A-Za-z])|US\$|CA\$|C\$|AU\$|A\$|[$€£₱\s]/gi, '');
   if (!/^[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d*)?|\.\d+)$/.test(s)) return NaN;
   s = s.replace(/,/g, '');
   const n = Number(s); return Number.isFinite(n) ? (negative ? -Math.abs(n) : n) : NaN;
