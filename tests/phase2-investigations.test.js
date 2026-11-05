@@ -85,3 +85,9 @@ test('metric changes preserve zero baseline and fractional differences',()=>{
  const b=metricSummary([{spend:5,conversions:1.5,clicks:10,impressions:100}],'leads');
  assert.deepEqual(metricChange(b,a,'conversions'),{before:0,after:1.5,absolute:1.5,percent:null});
 });
+test('sales ROAS is withheld for negative adjustments, and website activity excludes absent fields',()=>{
+ const s=metricSummary([{spend:10,revenue:100,conversions:1,clicks:10,impressions:100},{spend:-1,revenue:10,conversions:1,clicks:5,impressions:50}],'purchases');
+ assert.equal(s.roas,null);
+ const activity=metricSummary([{spend:null,revenue:null,conversions:null,clicks:10,impressions:null}],'unknown');
+ assert.deepEqual(goalMetricKeys('Website activity',activity),['clicks']);
+});
