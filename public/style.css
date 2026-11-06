@@ -238,3 +238,33 @@ body.print-preview{background:#e8e3dd;color:#241a17}body.print-preview:before{di
  .table-scroll td,.table-scroll th{padding:10px}
  .campaign-detail,.channel-detail{padding:16px}
 }
+
+/* Shared workspace introductions with room for each section's companion. */
+@media screen {
+ .workspace-intro,.mystery-intro{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:190px;padding:24px 30px;border:1px solid #fff;border-radius:22px;background:radial-gradient(ellipse at 90% 12%,#fff0d0,transparent 42%),linear-gradient(110deg,#fffdf7,#edf8fb);box-shadow:var(--shadow)}
+ .workspace-intro>div,.mystery-intro>div{min-width:0;max-width:68ch}
+ .workspace-intro h2,.mystery-intro h2{font-size:clamp(23px,2vw,29px);line-height:1.2;letter-spacing:-.7px;margin:7px 0 9px}
+ .workspace-intro p:not(.eyebrow),.mystery-intro p:not(.eyebrow){color:#674d40;font-size:14px;line-height:1.55;margin:0}
+ .workspace-intro>img,.mystery-intro>img{position:static;flex:none;width:clamp(135px,15vw,205px);height:160px;max-height:none;margin:0;object-fit:contain}
+ .panel-heading .page-companion{width:150px;height:150px;margin:-4px 22px 0 20px}
+ .panel-heading>div:first-child{min-height:150px}
+ .page-companion{width:150px;height:150px;margin:0 0 12px 20px}
+ .planner-panel:after,.time-hero:after,.guide:after{content:'';display:block;clear:both}
+ .case-toolbar{margin:24px 0 14px}
+ .case-choices{gap:12px;margin-bottom:16px}
+ .case-choice{padding:18px;min-height:125px}
+ .channel-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+}
+@media screen and (max-width:700px){
+ .workspace-intro,.mystery-intro{min-height:0;padding:20px;gap:12px;align-items:center}
+ .workspace-intro>img,.mystery-intro>img{position:static;width:96px;height:108px;max-height:none;float:none;flex:none}
+ .workspace-intro .eyebrow,.workspace-intro h2{padding-right:0;min-height:0}
+ .panel-heading .page-companion,.page-companion{width:100px;height:100px;margin:0 0 10px 12px}
+ .panel-heading>div:first-child{min-height:100px}
+}
+@media screen and (max-width:400px){
+ .workspace-intro,.mystery-intro{display:flex}
+ .workspace-intro>img,.mystery-intro>img{width:82px;height:96px}
+ .workspace-intro>div,.mystery-intro>div{flex:1}
+}
+@media screen{.time-hero>.notice,.planner-panel>.notice,.planner-panel>.planner-grid{clear:both}}
