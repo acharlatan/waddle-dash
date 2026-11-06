@@ -170,3 +170,21 @@ body.print-preview{background:#e8e3dd;color:#241a17}body.print-preview:before{di
 @media print{.report-sheet .report-section.print-empty,.report-sheet .report-section-heading p{display:none!important}.report-sheet .print-copy{orphans:3;widows:3}}
 /* Long report identities should wrap without changing the underlying values. */
 .campaign-detail,.channel-detail,.time-card,.briefing-main,.case-file{overflow-wrap:anywhere}
+
+/* A quieter, tighter workspace while retaining Waddle's existing palette. */
+@media (min-width:851px){
+ .welcome-first{min-height:0;padding:30px 36px;gap:24px}
+ .welcome-first h2{max-width:20ch;margin:7px 0 9px}
+ .welcome-first .welcome-actions{margin-top:16px}
+ .privacy-note{margin-top:14px;padding-top:10px}
+ .welcome-art img{width:min(100%,175px);max-height:175px}
+ .journey-card{min-height:125px;padding:17px 18px 16px 68px}
+ .journey-icon{position:absolute;left:18px;top:18px}
+ .journey-card h3{margin:3px 32px 5px 0}
+ .workspace-intro{padding:22px 26px}
+ .workspace-card{padding:17px}
+}
+.page-heading{padding-bottom:16px}
+.workspace-section-head{margin-top:22px}
+.panel-heading h2,.workspace-section-head h2{line-height:1.2}
+@media (max-width:560px){.welcome-first{padding:18px}.welcome-first .welcome-actions{margin-top:15px}.journey-card{min-height:0}}
