@@ -14,28 +14,22 @@
     </header>
     <div class="workspace">
       <aside class="sidebar glass" id="navigation-panel" aria-label="Main navigation">
-        <nav class="nav" id="navigation">
-          <span class="nav-group-label">WORKSPACE</span>
-          <a class="nav-link active" href="#overview" data-page="overview"><span class="nav-icon">⌂</span> Overview</a>
-          <span class="nav-group-label">EXPLORE &amp; INVESTIGATE</span>
-          <a class="nav-link" href="#mystery" data-page="mystery"><span class="nav-icon">⌕</span> Mystery Lab</a>
-          <a class="nav-link" href="#campaigns" data-page="campaigns"><span class="nav-icon">▤</span> Campaigns</a>
-          <a class="nav-link" href="#channels" data-page="channels"><span class="nav-icon">◉</span> Channels</a>
-          <a class="nav-link" href="#insights" data-page="insights"><span class="nav-icon">▥</span> Insights</a>
-          <span class="nav-group-label">YOUR WORK</span>
-          <a class="nav-link" href="#timeline" data-page="timeline"><span class="nav-icon">◷</span> Time Machine</a>
-          <a class="nav-link" href="#planner" data-page="planner"><span class="nav-icon">⚑</span> My next step</a>
-          <a class="nav-link" href="#report" data-page="report"><span class="nav-icon">▧</span> Waddle Report</a>
-          <span class="nav-group-label">HELP &amp; SETTINGS</span>
-          <a class="nav-link" href="#guide" data-page="guide"><span class="nav-icon">✧</span> Getting started</a>
-          <a class="nav-link" href="#ask" data-page="ask"><span class="nav-icon">☏</span> Ask Waddle</a>
-        <a class="nav-link" href="#data" data-page="data"><span class="nav-icon">⚙</span> Data & settings</a>
+        <nav class="nav" id="navigation" aria-label="Main workspaces">
+          <span class="nav-group-label">YOUR WORKSPACE</span>
+          <a class="nav-link active" href="#overview" data-workspace="home"><span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span></a>
+          <a class="nav-link" href="#investigate" data-workspace="investigate"><span class="nav-icon" aria-hidden="true">⌕</span><span>Investigate</span></a>
+          <a class="nav-link" href="#work" data-workspace="work"><span class="nav-icon" aria-hidden="true">⚑</span><span>My Work</span></a>
+          <a class="nav-link" href="#report" data-workspace="reports"><span class="nav-icon" aria-hidden="true">▧</span><span>Reports</span></a>
         </nav>
+        <details class="workspace-menu" id="workspace-menu"><summary><span aria-hidden="true">⚙</span> Workspace &amp; help</summary>
+          <nav aria-label="Workspace and help"><a class="utility-link" href="#guide" data-utility="guide">Getting started</a><a class="utility-link" href="#data" data-utility="data">Data, settings &amp; privacy</a></nav>
+        </details>
         <div class="sidebar-bottom"><p>YOUR LITTLE WORKSPACE <span>✦</span></p><div class="privacy-pill"><span>✧</span><div><strong>Just you & your data</strong><small>Your CSV stays in this browser.</small></div></div></div>
         <img class="meadow" src="./assets/meadow.svg" alt="">
       </aside>
       <main id="main" class="main" tabindex="-1">
-        <div class="page-heading"><div><p class="eyebrow"><span>✦</span> YOUR MARKETING WORKSPACE</p><h1 id="page-title">Your marketing, all in one <span>cozy place.</span></h1><p id="page-subtitle" class="subtitle">A little perspective makes a big difference.</p></div><div class="heading-sparkle" aria-hidden="true">✳</div></div>
+        <div class="page-heading"><div><p class="eyebrow" id="workspace-location"><span>✦</span> HOME</p><h1 id="page-title">Your marketing, all in one <span>cozy place.</span></h1><p id="page-subtitle" class="subtitle">A little perspective makes a big difference.</p></div><div class="heading-sparkle" aria-hidden="true">✳</div></div>
+        <nav id="workspace-tabs" class="workspace-tabs" aria-label="Workspace sections" hidden></nav>
         <div id="dataset-bar" class="dataset-bar" hidden></div>
         <div id="content" aria-live="polite"></div>
         <footer><span>Made for the curious, the creative, and the spreadsheet-weary. ✦</span><span>Waddle Dash is an unofficial fan project.</span></footer>

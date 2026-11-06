@@ -13,6 +13,20 @@ export function metricSummary(rows,definition='unknown'){
  if(!nonnegative(rows,['spend','revenue']))s.roas=null;
  return s;
 }
+
+// Ranking every recorded channel requires comparable, valid inputs across all of them.
+export function rankChannelsByValue(rows,data,metric){
+ if(!['revenue','roas'].includes(metric))return {error:'Choose a supported channel metric.'};
+ if(!rows.length)return {error:'Add a report with recorded rows first.'};
+ if((data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)'))return {error:'Review retained duplicates or excluded invalid records before ranking channels.'};
+ const grouped=new Map();
+ for(const row of rows){const label=row.channel||'Unknown';if(!grouped.has(label))grouped.set(label,[]);grouped.get(label).push(row)}
+ const channels=[...grouped].map(([label,records])=>({label,records,...metricSummary(records,data?.conversionDefinition)}));
+ if(metric==='roas'&&channels.some(c=>c.roas===null))return {error:'Every recorded channel needs complete, non-negative spend and value, with positive spend, to compare ROAS safely.'};
+ if(metric==='revenue'&&channels.some(c=>!complete(c,'revenue')||!nonnegative(c.records,['revenue'])))return {error:'Every recorded channel needs complete, non-negative value to compare recorded totals safely.'};
+ channels.sort((a,b)=>b[metric]-a[metric]||a.label.localeCompare(b.label));
+ return {top:channels[0]};
+}
 export function goalMetricKeys(goal,s,hasData=true){
  if(goal==='Leads or inquiries'||goal==='Bookings'){
   const fourth=s.cvr!==null?'cvr':s.clicks!==null?'clicks':s.impressions!==null?'impressions':null;
