@@ -44,7 +44,9 @@ Snapshot archive writes use a browser lock and check that the stored archive has
 
 Demo snapshots stay in memory and are isolated from the personal archive. Its check-in example uses the observed baseline week and an illustrative next week that repeats its figures; this is not a real later report or a completed experiment. Report observations, investigation, experiment, check-in and notes are separate editable sections. Appending to a section that already contains text asks for confirmation. Printing uses the browser print dialog and never automatically publishes or shares the report.
 
-The experiment planner is editable and copyable. Waddle Report allows editing observations, plan and notes. **Print / Save as PDF** opens the browser print dialog; it does not create or upload a PDF itself. No report is sent or shared automatically. There is no background sync, cloud storage, AI service, or automated budget change. Users should review results and ensure conversion definitions match their goals.
+The experiment planner is editable and copyable. Waddle Report lets users review and explicitly append up to two Briefing observations, a Mystery Lab case, a plan, and a Time Machine check-in. Appended observations and cases include their report and date context; a plan retains its original case period when available. Existing text stays as written when dates or the active report change. A direct case return is kept only while one identifiable appended case remains unedited. The selected metrics and coverage describe the currently selected report and dates, so users should review the provenance of older narrative sections before sharing.
+
+The report offers a print-layout preview and **Print / Save as PDF**, which opens the browser print dialog; it does not create or upload a PDF itself. Empty narrative sections are omitted from the print layout. No report is sent or shared automatically. There is no background sync, cloud storage, AI service, or automated budget change. Users should review results and ensure conversion definitions match their goals.
 
 ## Run and deploy
 

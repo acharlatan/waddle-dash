@@ -95,3 +95,14 @@ test('snapshot and check-in references remain with an explicitly saved copy',()=
  s.investigationId=first.id;s.investigationRootId=first.rootId;s.checkins=[{earlierSnapshotId:'snapshot-a',laterSnapshotId:'snapshot-b',earlierStart:'2026-10-01',earlierEnd:'2026-10-07',laterStart:'2026-10-08',laterEnd:'2026-10-14'}];s.report.checkin='Existing report text\n\nFictional check-in';
  const second=save(storage,a,s,'second');assert.equal(second.session.checkins[0].earlierSnapshotId,'snapshot-a');assert.match(restoreInvestigation(second).report.checkin,/Existing report text/);assert.deepEqual(first.session.checkins,[]);
 });
+
+test('edited report evidence and its case-return context survive an explicit save',()=>{
+ const storage=new MemoryStorage(),archive=readArchive(storage),s=fictionalState();writeArchive(storage,archive,[]);
+ s.report.investigation='An edited fictional case from 2026-10-08 – 2026-10-14.';
+ s.report.investigationCaseType='expensive';s.report.investigationStart='2026-10-08';s.report.investigationEnd='2026-10-14';
+ const saved=save(storage,archive,s,'report-with-case',true);s.report.investigation='A later unsaved edit';
+ const restored=restoreInvestigation(saved);
+ assert.match(restored.report.investigation,/edited fictional case/);assert.equal(restored.report.investigationCaseType,'expensive');
+ assert.deepEqual([restored.report.investigationStart,restored.report.investigationEnd],['2026-10-08','2026-10-14']);
+ assert.equal(restored.report.notes,'An edited fictional note');
+});

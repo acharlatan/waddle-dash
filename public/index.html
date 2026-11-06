@@ -7,6 +7,7 @@
   <link rel="icon" type="image/webp" href="./assets/mascot-welcome.webp"><link rel="stylesheet" href="./style.css">
 </head>
 <body>
+  <div id="print-preview-toolbar" class="print-preview-toolbar no-print" hidden><strong>Print layout preview</strong><span>Use your browser’s print dialog to print or save a PDF.</span><button class="button button-soft" type="button" data-preview-close>Return to editor</button><button class="button button-primary" type="button" data-print>Print / Save as PDF</button></div>
   <div class="app-shell">
     <header class="topbar glass">
       <a class="brand" href="#overview" aria-label="Waddle Dash home"><img src="./assets/mascot-welcome.webp" alt=""><span>Waddle Dash</span><span class="brand-star" aria-hidden="true">✦</span></a>
@@ -31,7 +32,7 @@
         <div class="page-heading"><div><p class="eyebrow" id="workspace-location"><span>✦</span> HOME</p><h1 id="page-title">Your marketing, all in one <span>cozy place.</span></h1><p id="page-subtitle" class="subtitle">A little perspective makes a big difference.</p></div><div class="heading-sparkle" aria-hidden="true">✳</div></div>
         <nav id="workspace-tabs" class="workspace-tabs" aria-label="Workspace sections" hidden></nav>
         <div id="dataset-bar" class="dataset-bar" hidden></div>
-        <div id="content" aria-live="polite"></div>
+        <div id="content"></div>
         <footer><span>Made for the curious, the creative, and the spreadsheet-weary. ✦</span><span>Waddle Dash is an unofficial fan project.</span></footer>
       </main>
     </div>
