@@ -188,3 +188,53 @@ body.print-preview{background:#e8e3dd;color:#241a17}body.print-preview:before{di
 .workspace-section-head{margin-top:22px}
 .panel-heading h2,.workspace-section-head h2{line-height:1.2}
 @media (max-width:560px){.welcome-first{padding:18px}.welcome-first .welcome-actions{margin-top:15px}.journey-card{min-height:0}}
+
+/* Carry the same calm, compact visual rhythm into data-loaded workspaces. */
+@media screen {
+ .dataset-bar{gap:6px 12px;padding:9px 14px;margin-bottom:12px;border-radius:16px}
+ .dataset-bar .file-name{max-width:none;white-space:normal;overflow:visible;overflow-wrap:anywhere}
+ .coverage-box{margin:10px 0 12px;padding:10px 14px;border-radius:14px;line-height:1.5}
+ .coverage-box p{margin:2px 0}
+ .demo-notice{margin-bottom:12px}
+ .briefing-main{padding:22px 24px;margin-bottom:14px;border-radius:22px}
+ .briefing-head img{width:64px;height:64px}
+ .briefing-main .insight-list{gap:10px;margin-top:14px}
+ .briefing-main .insight-row{padding:14px 16px;border-radius:16px}
+ .briefing-main .insight-row p{line-height:1.5;margin:6px 0}
+ .overview-heading{margin:20px 2px 10px}
+ .metric-grid{gap:12px}
+ .metric-card{min-width:0;min-height:108px;padding:16px;border-radius:19px}
+ .metric-foot{white-space:normal}
+ .active-dashboard{margin-top:14px;gap:14px}
+ .wide-panel,.performance{border-radius:22px}
+ .table-scroll{border:1px solid #eddfd3;border-radius:14px;background:rgba(255,253,249,.8)}
+ .table-scroll table{margin:0}
+ .table-scroll th{background:#faf0e7;color:#705044;line-height:1.35}
+ .table-scroll td,.table-scroll th{padding:11px 12px}
+ .table-scroll tbody tr:nth-child(even){background:rgba(250,245,237,.55)}
+ .table-scroll tbody tr:hover{background:#fff2e6}
+ .table-scroll button{min-height:36px}
+ .table-box .table-scroll{margin-top:4px}
+ .campaign-detail,.channel-detail{background:linear-gradient(125deg,#fffdf9,#f2f9f8);border:1px solid #e3e8df;border-radius:17px}
+ .campaign-detail h3,.channel-detail h3{font-size:18px;line-height:1.3}
+ .case-question,.case-choice,.channel-card,.time-card,.info-card{border-radius:16px}
+ .case-file,.report-sheet{border-radius:22px}
+ .planner-grid{gap:14px;margin-top:18px}
+ .planner-grid textarea,.report-label textarea,.time-card textarea{border-radius:12px}
+ .workspace-card{border-radius:19px}
+}
+@media screen and (max-width:850px){
+ .metric-grid{gap:9px}
+ .metric-card{padding:14px 12px}
+}
+@media screen and (max-width:560px){
+ .dataset-bar{gap:6px 9px;padding:10px 12px}
+ .coverage-box{padding:10px 12px;font-size:12px}
+ .briefing-main{padding:17px}
+ .briefing-head img{width:54px;height:54px}
+ .briefing-main .insight-row{padding:13px 14px}
+ .metric-grid{gap:8px}
+ .metric-card{min-height:108px;padding:13px 11px}
+ .table-scroll td,.table-scroll th{padding:10px}
+ .campaign-detail,.channel-detail{padding:16px}
+}
