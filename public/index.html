@@ -11,7 +11,7 @@
   <div class="app-shell">
     <header class="topbar glass">
       <a class="brand" href="#overview" aria-label="Waddle Dash home"><img src="./assets/mascot-welcome.webp" alt=""><span>Waddle Dash</span><span class="brand-star" aria-hidden="true">✦</span></a>
-      <div class="header-right"><div class="mode-switch" role="group" aria-label="Data mode"><button type="button" data-mode="personal" aria-pressed="true">My data</button><button type="button" data-mode="demo" aria-pressed="false">Demo</button></div><span class="header-note"><span class="status-dot"></span> A little clarity for your marketing</span><button class="button button-primary" data-upload><span class="upload-icon" aria-hidden="true">↥</span> Upload CSV</button><button class="menu-toggle" type="button" data-menu aria-controls="navigation-panel" aria-expanded="false"><span aria-hidden="true">☰</span> Menu</button></div>
+      <div class="header-right"><div class="mode-switch" role="group" aria-label="Data mode"><button type="button" data-mode="personal" aria-pressed="true">My data</button><button type="button" data-mode="demo" aria-pressed="false">Demo</button></div><button class="button button-primary" data-upload><span class="upload-icon" aria-hidden="true">↥</span> Upload CSV</button><button class="menu-toggle" type="button" data-menu aria-controls="navigation-panel" aria-expanded="false"><span aria-hidden="true">☰</span> Menu</button></div>
     </header>
     <div class="workspace">
       <aside class="sidebar glass" id="navigation-panel" aria-label="Main navigation">
@@ -25,11 +25,11 @@
         <details class="workspace-menu" id="workspace-menu"><summary><span aria-hidden="true">⚙</span> Workspace &amp; help</summary>
           <nav aria-label="Workspace and help"><a class="utility-link" href="#guide" data-utility="guide">Getting started</a><a class="utility-link" href="#data" data-utility="data">Data, settings &amp; privacy</a></nav>
         </details>
-        <div class="sidebar-bottom"><p>YOUR LITTLE WORKSPACE <span>✦</span></p><div class="privacy-pill"><span>✧</span><div><strong>Just you & your data</strong><small>Your CSV stays in this browser.</small></div></div></div>
+        <div class="sidebar-bottom"><p>YOUR SESSION <span>✦</span></p><div class="privacy-pill session-pill"><span aria-hidden="true">✧</span><div><strong id="sidebar-data-status" aria-live="polite">No report yet</strong><small id="sidebar-data-detail">Import a CSV or explore Demo.</small></div></div></div>
         <img class="meadow" src="./assets/meadow.svg" alt="">
       </aside>
       <main id="main" class="main" tabindex="-1">
-        <div class="page-heading"><div><p class="eyebrow" id="workspace-location"><span>✦</span> HOME</p><h1 id="page-title">Your marketing, all in one <span>cozy place.</span></h1><p id="page-subtitle" class="subtitle">A little perspective makes a big difference.</p></div><div class="heading-sparkle" aria-hidden="true">✳</div></div>
+        <div class="page-heading"><div><p class="eyebrow" id="workspace-location"><span>✦</span> HOME</p><h1 id="page-title">Welcome to your <span>marketing workspace.</span></h1><p id="page-subtitle" class="subtitle">Explore the evidence, then decide what comes next.</p></div><div class="heading-sparkle" aria-hidden="true">✳</div></div>
         <nav id="workspace-tabs" class="workspace-tabs" aria-label="Workspace sections" hidden></nav>
         <div id="dataset-bar" class="dataset-bar" hidden></div>
         <div id="content"></div>
