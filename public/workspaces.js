@@ -24,6 +24,27 @@ export function workspaceForPage(page) {
  return WORKSPACE_PAGES[page] || 'home';
 }
 
+// A briefing link opens a view that can actually examine the metric it mentions.
+export function destinationForMetric(goal, metric) {
+ if (metric === 'spend') return {page:'mystery',caseType:'spending'};
+ if (goal === 'Website activity' && ['clicks','impressions','ctr'].includes(metric)) return {page:'mystery',caseType:'results'};
+ if (metric === 'cpc') return {page:'mystery',caseType:'expensive'};
+ if (metric === 'conversions') return {page:'mystery',caseType:'results'};
+ return {page:'channels',caseType:''};
+}
+
+export function openCampaignDetail(state,campaign,channel,origin) {
+ state.campaign=campaign;state.campaignChannel=channel;state.hasCampaignSelection=true;
+ if(origin!=='campaigns')state.campaignReturn=['mystery','channels'].includes(origin)?origin:'';
+ state.focusCampaign=true;
+}
+
+export function openChannelDetail(state,channel,origin) {
+ state.selectedChannel=channel;state.hasChannelSelection=true;
+ if(origin!=='channels')state.channelReturn=['mystery','campaigns'].includes(origin)?origin:'';
+ state.focusChannel=true;
+}
+
 // Keep every existing question available while making the starting choices fit the goal.
 export function orderedAskQuestions(goal) {
  const general=['changes','coverage'], value=['best','revenue'];
@@ -34,7 +55,7 @@ export function orderedAskQuestions(goal) {
 const SESSION_FIELDS = [
  'data', 'name', 'example', 'goal', 'days', 'metric', 'sort', 'caseType',
  'compareA', 'compareB', 'compareConfirmed', 'report', 'plan', 'search', 'question',
- 'hasCampaignSelection', 'campaign', 'campaignChannel', 'campaignReturn'
+ 'hasCampaignSelection', 'campaign', 'campaignChannel', 'campaignReturn', 'hasChannelSelection', 'selectedChannel', 'channelReturn', 'planCaseType'
 ];
 
 export function switchSessionMode(state, slots, mode, createDemo) {
@@ -43,7 +64,7 @@ export function switchSessionMode(state, slots, mode, createDemo) {
  const empty = {
   data:null, name:'', example:false, goal:'Sales', days:'30', metric:'revenue', sort:'revenue',
   caseType:'expensive', compareA:'', compareB:'', compareConfirmed:false, report:{}, plan:{},
-  search:'', question:'', hasCampaignSelection:false, campaign:'', campaignChannel:'', campaignReturn:''
+  search:'', question:'', hasCampaignSelection:false, campaign:'', campaignChannel:'', campaignReturn:'', hasChannelSelection:false, selectedChannel:'', channelReturn:'', planCaseType:''
  };
  const next = slots[mode] || (mode === 'demo' ? {...empty, ...createDemo()} : empty);
  Object.assign(state, next, {mode});

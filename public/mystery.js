@@ -1,4 +1,5 @@
 import {summarize, addDays, comparisonCoverage, percentChange} from './analytics.js';
+import {metricSummary} from './marketing.js';
 
 const complete=(s,k)=>s.count>0 && s[`${k}Coverage`]===s.count;
 const nonNegative=(rows,fields)=>rows.every(r=>fields.every(k=>r[k]===null||r[k]===undefined||r[k]>=0));
@@ -13,7 +14,7 @@ export function campaignGroups(rows) {
  for(const row of rows){const channel=String(row.channel||'').trim(),campaign=String(row.campaign||'').trim();const id=JSON.stringify([channel,campaign]);if(!groups.has(id))groups.set(id,{id,channel,campaign,rows:[]});groups.get(id).rows.push(row)}
  return [...groups.values()].map(g=>({...g,label:g.campaign||'Unassigned campaign',summary:summarize(g.rows)}));
 }
-export function investigate(type, period, days, data=null) {
+export function investigate(type, period, days, data=null, goal='') {
  const rows=period.current||[], oldRows=period.previous||[], current=summarize(rows), previous=summarize(oldRows);
  if(!rows.length)return {error:'Add a supported report or explore the demo to open a case.'};
  const currency=data?.currency||'USD';
@@ -32,6 +33,25 @@ export function investigate(type, period, days, data=null) {
  if(new Set(rows.map(r=>r.date)).size!==n||new Set(oldRows.map(r=>r.date)).size!==n)return {error:`This case needs records for every day in both ${n}-day windows. Add the missing dates or choose another date range. A recorded day alone does not guarantee a complete export.`};
  const coverage=comparisonCoverage(oldRows,rows,n,data?[data]:[]);
  if(!coverage.safe)return {error:[...coverage.reasons,...coverage.differences.slice(0,5)].join(' ')+(coverage.differences.length>5?` and ${coverage.differences.length-5} more groups.`:''),coverage};
+ // Website activity uses recorded clicks or impressions, never invented conversions.
+ if(type==='results'&&goal==='Website activity'){
+  const all=[...oldRows,...rows],usable=k=>complete(current,k)&&complete(previous,k)&&nonNegative(all,[k]);
+  const metricKey=['clicks','impressions'].find(usable);
+  if(!metricKey)return {error:'This activity case needs complete, non-negative clicks or impressions on every row in both periods. Review missing values or negative adjustments; CTR also needs complete clicks and positive impressions.',coverage};
+  const before=metricSummary(oldRows,data?.conversionDefinition),after=metricSummary(rows,data?.conversionDefinition);
+  const prior=new Map(campaignGroups(oldRows).map(g=>[g.id,g]));
+  const changes=campaignGroups(rows).map(g=>{
+   const old=prior.get(g.id),p=metricSummary(old.rows,data?.conversionDefinition),c=metricSummary(g.rows,data?.conversionDefinition);
+   return {label:g.campaign||g.channel||'Unknown channel',campaign:g.campaign,channel:g.channel,previous:p,current:c,metricDelta:c[metricKey]-p[metricKey]};
+  }).sort((a,b)=>a.metricDelta-b.metricDelta||a.label.localeCompare(b.label)||a.channel.localeCompare(b.channel));
+  const top=changes.find(g=>g.metricDelta<0);
+  const entity=top?(top.campaign?`${top.campaign} (${top.channel||'unknown channel'})`:top.channel||'unknown channel'):'';
+  const why=top?`It has the largest recorded ${metricKey} decrease among the comparable campaign/channel groups.`:'';
+  const next=top?`Review ${entity}: recorded ${metricKey} ${number(top.previous[metricKey])} → ${number(top.current[metricKey])}. ${why} Review report scope and traffic context; these data do not establish the cause.`:`No comparable campaign or channel has a recorded ${metricKey} decrease. Review the report and context before choosing a next step.`;
+  const ctrNote=before.ctr===null||after.ctr===null?' CTR is unavailable unless clicks and impressions are complete and non-negative, with positive impressions.':'';
+  const fallbackNote=metricKey==='impressions'&&all.some(r=>Number.isFinite(r.clicks))?' Clicks are incomplete or include negative adjustments, so they are not used for this ranking.':'';
+  return {title:'The disappearing results case',activity:true,metricKey,current:after,previous:before,previousStart,previousEnd,changes,top,why,coverage,next,note:`Both periods have recorded rows for the observed campaign/channel groups on each date, with complete non-negative ${metricKey}.${fallbackNote}${ctrNote} Recorded rows cannot prove the export includes every campaign or event, or establish the reason for a change.`};
+ }
  const missing=required.filter(k=>!complete(current,k)||!complete(previous,k));
  if(missing.length)return {error:`This case needs ${missing.join(' and ')} on every row in both periods. Add the missing values to your report.`};
  if(!nonNegative([...oldRows,...rows],required))return {error:'The required metrics contain negative adjustments. Review those adjustments before interpreting changes or cost per conversion; Waddle cannot safely rank these campaigns.'};

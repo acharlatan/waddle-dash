@@ -18,6 +18,15 @@ export function makePlanDraft(result,type,period,data,days) {
   hypothesis='Could the recorded spend and results reflect a change in traffic, tracking, or campaign scope? This is a question to assess, not a conclusion.';
   test='Review the source report and conversion tracking; choose one campaign or landing-page change to test only if the context supports it.';
   measure='Recorded spend and conversions; cost per recorded conversion when complete and valid.';
+ }else if(result.activity){
+  const previous=`${result.previousStart} – ${result.previousEnd}`,key=result.metricKey,x=result.top;
+  const entity=x?(x.campaign?`${x.campaign} (${x.channel||'unknown channel'})`:x.channel||'Unknown channel'):'The recorded report';
+  const a=x?.previous||result.previous,b=x?.current||result.current;
+  const ctr=a.ctr!==null&&b.ctr!==null?` Recorded CTR was ${a.ctr.toFixed(2)}% → ${b.ctr.toFixed(2)}%.`:'';
+  noticed=`${entity}: ${number(a[key])} recorded ${key} in ${previous} and ${number(b[key])} in ${current}.${ctr}${x?' '+result.why:' No comparable group has a supported decrease to highlight.'}`;
+  hypothesis='Could reporting scope, tracking, or traffic context help explain the recorded change? This is a question to review, not a conclusion.';
+  test='Review the source report and relevant traffic and tracking context before choosing whether to run a test.';
+  measure=`Recorded ${key}${a.ctr!==null&&b.ctr!==null?' and CTR when clicks and impressions are complete and valid':''}.`;
  }else if(result.top){
   const x=result.top,previous=`${result.previousStart} – ${result.previousEnd}`;
   const spend=type==='expensive'?` Spend was ${money(x.previous.spend,currency)} → ${money(x.current.spend,currency)}.`:'';
