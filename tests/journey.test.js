@@ -26,7 +26,7 @@ test('fictional check-in is separate, planned, and compares records without clai
 });
 test('saved snapshot contains independent plan and edited report without migrating old entries',()=>{
  const data=createDemoDataset(),records=filterPeriod(data.records,'7').current,plan={noticed:'Original',review:'Next week'},report={summary:'Edited observation',checkin:'User note'};
- const snap=makeSnapshot({records,data,name:'Synthetic',goal:'Leads',plan,report});assert.equal(snap.status,'planned');plan.noticed='Changed';report.summary='Changed';records[0].spend=999;
+ const snap=makeSnapshot({records,data,name:'Synthetic',goal:'Leads',plan,report});assert.equal(snap.status,'');plan.noticed='Changed';report.summary='Changed';records[0].spend=999;
  assert.equal(snap.plan.noticed,'Original');assert.equal(snap.report.summary,'Edited observation');assert.notEqual(snap.data.records[0].spend,999);const legacy={...snap,status:'ongoing'};compareSnapshots(legacy,snap);assert.equal(legacy.status,'ongoing');
 });
 test('check-in prevents incompatible sources, currencies, definitions and overlapping dates',()=>{

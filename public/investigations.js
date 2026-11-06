@@ -72,6 +72,13 @@ export function restoreInvestigation(item){
  return {...s,caseContext:item.context?copy(item.context):null,investigationTitle:item.title,investigationId:item.id,investigationRootId:item.rootId,investigationDirty:false,example:false,search:'',question:'',compareA:'',compareB:'',compareConfirmed:false,campaignReturn:'',channelReturn:''};
 }
 
+// A snapshot points to a specific saved copy, not an arbitrary newer copy in the same family.
+// Without an exact reference, leave the association unknown rather than inventing its context.
+export function linkedInvestigationForSnapshot(snapshot,items){
+ if(!snapshot?.investigationId||!snapshot?.investigationRootId)return null;
+ return (items||[]).find(item=>item.id===snapshot.investigationId&&item.rootId===snapshot.investigationRootId)||null;
+}
+
 export function newInvestigationId(cryptoObject=globalThis.crypto){
  if(typeof cryptoObject?.randomUUID==='function')return cryptoObject.randomUUID();
  if(typeof cryptoObject?.getRandomValues!=='function')throw Error('This browser cannot create a safe unique ID. Nothing was saved.');

@@ -168,3 +168,5 @@ body.print-preview{background:#e8e3dd;color:#241a17}body.print-preview:before{di
 @media(max-width:560px){.button,.menu-toggle{font-size:13px}.mode-switch button{font-size:12px;min-height:44px}.print-preview .report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .print-preview .report-section.print-empty,.print-preview .report-section-heading p{display:none!important}
 @media print{.report-sheet .report-section.print-empty,.report-sheet .report-section-heading p{display:none!important}.report-sheet .print-copy{orphans:3;widows:3}}
+/* Long report identities should wrap without changing the underlying values. */
+.campaign-detail,.channel-detail,.time-card,.briefing-main,.case-file{overflow-wrap:anywhere}

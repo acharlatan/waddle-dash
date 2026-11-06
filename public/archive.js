@@ -20,6 +20,11 @@ export function deleteArchive(storage,archive){
  catch(error){archive.error='Could not remove saved data from this browser.';return false}
 }
 
+// An absent draft leaves legacy status metadata untouched; an explicit blank clears it.
+export function updateSnapshotCheckin(snapshot,notes,statusDraft){
+ return {...snapshot,notes,...(statusDraft===undefined?{}:{status:statusDraft})};
+}
+
 // Web Locks serialize this app's snapshot writers; stale views are checked again inside the lock.
 export async function withSnapshotLock(locks,archive,operation){
  if(!locks||typeof locks.request!=='function'){archive.error='Safe snapshot saving needs browser lock support. Your existing snapshots have not been changed.';return false}

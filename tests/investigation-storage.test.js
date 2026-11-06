@@ -5,7 +5,7 @@ import {createDemoDataset,makePlanDraft} from '../public/journey.js';
 import {investigate} from '../public/mystery.js';
 import {makeSnapshot,compareSnapshots,snapshotDataForSession} from '../public/time-machine.js';
 import {STORAGE_KEY,readArchive,writeArchive,deleteArchive,withSnapshotLock} from '../public/archive.js';
-import {INVESTIGATION_PREFIX,captureCaseContext,makeInvestigation,readInvestigations,saveInvestigation,restoreInvestigation} from '../public/investigations.js';
+import {INVESTIGATION_PREFIX,captureCaseContext,makeInvestigation,readInvestigations,saveInvestigation,restoreInvestigation,linkedInvestigationForSnapshot} from '../public/investigations.js';
 
 class MemoryStorage{
  constructor(){this.map=new Map();this.writes=0;this.failRead=false;this.failWrite=false}
@@ -105,4 +105,14 @@ test('edited report evidence and its case-return context survive an explicit sav
  assert.match(restored.report.investigation,/edited fictional case/);assert.equal(restored.report.investigationCaseType,'expensive');
  assert.deepEqual([restored.report.investigationStart,restored.report.investigationEnd],['2026-10-08','2026-10-14']);
  assert.equal(restored.report.notes,'An edited fictional note');
+});
+
+test('a snapshot resolves its exact saved investigation copy, not a newer relative',()=>{
+ const older={id:'old-copy',rootId:'family',title:'Original case',context:{observation:'Original evidence'}};
+ const newer={id:'new-copy',rootId:'family',title:'Different case',context:{observation:'Later evidence'}};
+ const snapshot={investigationId:'old-copy',investigationRootId:'family'};
+ assert.equal(linkedInvestigationForSnapshot(snapshot,[newer,older]),older);
+ assert.equal(linkedInvestigationForSnapshot(snapshot,[newer]),null);
+ assert.equal(linkedInvestigationForSnapshot({investigationRootId:'family'},[newer,older]),null);
+ assert.equal(linkedInvestigationForSnapshot({investigationId:'old-copy',investigationRootId:'other'},[older]),null);
 });

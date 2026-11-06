@@ -61,6 +61,12 @@ export function draftsForImport(state, linkedFollowup) {
  };
 }
 
+// Keep the user's workspace goal when starting a later report, without assuming its source or definitions.
+export function laterReportGoal(state){
+ const goals=['Sales','Leads or inquiries','Bookings','Website activity','Other'];
+ return state.mode==='personal'&&state.data&&goals.includes(state.goal)?state.goal:null;
+}
+
 // Each mode keeps its own in-memory navigation and draft context. No storage writes occur here.
 const SESSION_FIELDS = [
  'data', 'name', 'example', 'goal', 'days', 'metric', 'sort', 'caseType',

@@ -131,7 +131,8 @@ export function normalizeData(parsed, mapping, currency = 'USD', options = {}) {
     const reason=summaryRow ? 'summary row (excluded)' : !date ? 'invalid date' : !channel ? 'missing channel' : METRICS.some(k=>Number.isNaN(values[k])) ? 'invalid number' : METRICS.every(k=>values[k]===null) ? 'no metric values' : null;
     if (reason) { if(alreadySeen)excludedDuplicates++; const error={record:index+1,csvRecord:recordNo,reason}; if(reason==='invalid number')error.field=METRICS.find(k=>Number.isNaN(values[k])); errors.push(error); continue; }
     if(seenAccepted.has(signature))duplicates++; else seenAccepted.add(signature);
-    records.push({date,channel:channel.slice(0,160),campaign:get('campaign').slice(0,160),...values});
+    // Preserve the full identity. Truncation can silently merge distinct campaigns or channels.
+    records.push({date,channel,campaign:get('campaign'),...values});
   }
   if (!records.length) {const error=new Error('No usable rows found. Review the excluded records below, correct the source file, and select it again.');error.excludedRecords=errors;error.duplicates=duplicates;error.excludedDuplicates=excludedDuplicates;throw error;}
   records.sort((a,b)=>a.date.localeCompare(b.date));

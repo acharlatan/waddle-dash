@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WORKSPACE_LINKS,pageFromHash,workspaceForPage,switchSessionMode,orderedAskQuestions,draftsForImport} from '../public/workspaces.js';
+import {WORKSPACE_LINKS,pageFromHash,workspaceForPage,switchSessionMode,orderedAskQuestions,draftsForImport,laterReportGoal} from '../public/workspaces.js';
 
 test('legacy routes remain reachable and identify their parent workspace',()=>{
  const routes={overview:'home',mystery:'investigate',campaigns:'investigate',channels:'investigate',insights:'investigate',ask:'investigate',planner:'work',timeline:'work',report:'reports',guide:'settings',data:'settings'};
@@ -55,4 +55,14 @@ test('a linked later report retains independent copies of the plan, report edits
  followup.plan.noticed='Later edit';followup.report.notes='Later note';followup.checkins[0].earlierSnapshotId='different';
  assert.equal(state.plan.noticed,'Original plan');assert.equal(state.report.notes,'Existing edit');assert.equal(state.checkins[0].earlierSnapshotId,'fictional');
  assert.deepEqual(draftsForImport(state,false),{plan:{},report:{},planCaseType:'',checkins:[]});
+});
+
+
+test('a later-report import retains the active personal goal without taking it from demo or an empty session',()=>{
+ const s={mode:'personal',data:{records:[]},goal:'Leads or inquiries'};
+ assert.equal(laterReportGoal(s),'Leads or inquiries');
+ assert.equal(laterReportGoal({...s,goal:'Website activity'}),'Website activity');
+ assert.equal(laterReportGoal({...s,mode:'demo'}),null);
+ assert.equal(laterReportGoal({...s,data:null}),null);
+ assert.equal(laterReportGoal({...s,goal:'unrecognized'}),null);
 });

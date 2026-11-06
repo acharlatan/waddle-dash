@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parseCSV,parseCSVRows,suggestHeaderRow,selectCSVHeader,looksLikeContactList,suggestMapping,normalizeData,parseNumber,dateCoverage,filterPeriod,comparisonCoverage} from '../public/analytics.js';
-import {investigate} from '../public/mystery.js';
+import {investigate,campaignGroups} from '../public/mystery.js';
 import {makeSnapshot,compareSnapshots} from '../public/time-machine.js';
 const fixture=name=>readFileSync(new URL(`./fixtures/${name}.csv`,import.meta.url),'utf8');
 const parse=name=>parseCSV(fixture(name));
@@ -30,3 +30,12 @@ test('invalid excluded records and retained duplicates pause period comparisons'
 test('adjacent currency codes are recognized and incompatible codes block import',()=>{for(const x of ['EUR100','100EUR','JPY100']){const p=parseCSV(`Date,Channel,Spend\n2026-10-01,Search,${x}`);assert.throws(()=>normal(p,'USD'),/currency/i)}let p=parseCSV('Date,Channel,Spend\n2026-10-01,Search,USD100');assert.equal(normal(p,'USD').records[0].spend,100)});
 
 test('unlabeled extra fields block import rather than silently shifting or discarding values',()=>{let p=parseCSV('Date,Channel,Spend\n2026-10-01,Search,1,200');assert.throws(()=>normal(p),/more fields than the selected header/)});
+
+test('long campaign and channel names retain their full identities instead of merging at 160 characters',()=>{
+ const campaignPrefix='Campaign '.repeat(20),channelPrefix='Channel '.repeat(20);
+ const csv=`Date,Channel,Campaign,Clicks\n2026-10-01,${channelPrefix}north,${campaignPrefix}north,1\n2026-10-01,${channelPrefix}south,${campaignPrefix}south,2`;
+ const data=normal(parseCSV(csv));
+ assert.deepEqual(data.records.map(r=>r.campaign),[`${campaignPrefix}north`,`${campaignPrefix}south`]);
+ assert.deepEqual(data.records.map(r=>r.channel),[`${channelPrefix}north`,`${channelPrefix}south`]);
+ assert.equal(campaignGroups(data.records).length,2);
+});
