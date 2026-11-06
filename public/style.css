@@ -170,3 +170,56 @@ body.print-preview{background:#e8e3dd;color:#241a17}body.print-preview:before{di
 @media print{.report-sheet .report-section.print-empty,.report-sheet .report-section-heading p{display:none!important}.report-sheet .print-copy{orphans:3;widows:3}}
 /* Long report identities should wrap without changing the underlying values. */
 .campaign-detail,.channel-detail,.time-card,.briefing-main,.case-file{overflow-wrap:anywhere}
+
+
+/* Home-onboarding refresh: concise hierarchy, same cozy visual identity. */
+.header-right{gap:14px}
+.topbar{height:64px}
+.brand{font-size:24px;letter-spacing:-1.1px}
+.brand img{width:52px;height:44px}
+.session-pill{background:rgba(255,250,244,.91);border-color:#f3dfcf}
+.session-pill>span{color:#d97942}
+.session-pill strong{color:#683d2d;font-size:12px}
+.session-pill small{font-size:11px;color:#775746}
+.is-empty-home .page-heading{padding-bottom:14px}
+.is-empty-home .page-heading h1{font-size:clamp(28px,2.35vw,37px)}
+.is-empty-home .subtitle{margin-top:8px}
+.is-empty-home .welcome-first{min-height:0;margin-bottom:0;padding:30px 35px;gap:26px;border-radius:24px}
+.is-empty-home .welcome-first h2{max-width:22ch;font-size:clamp(28px,2.5vw,36px);line-height:1.13;margin:8px 0 10px}
+.is-empty-home .welcome-copy>p:not(.welcome-links){max-width:53ch;font-size:14px;line-height:1.55}
+.is-empty-home .welcome-first .welcome-actions{margin-top:18px}
+.is-empty-home .welcome-first .welcome-actions .button{min-height:43px}
+.is-empty-home .welcome-links{margin-top:12px!important}
+.is-empty-home .privacy-note{margin-top:15px;padding-top:12px;max-width:610px}
+.is-empty-home .privacy-note p{margin:0;font-size:11.5px;line-height:1.5}
+.is-empty-home .welcome-art{flex-basis:25%;max-width:230px}
+.is-empty-home .welcome-art img{width:min(100%,175px);max-height:175px}
+.is-empty-home .start-section{margin-top:22px}
+.is-empty-home .section-heading{margin-bottom:12px}
+.is-empty-home .section-heading h2{font-size:21px}
+.is-empty-home .journey-card{min-height:140px;padding:17px 19px}
+.is-empty-home .journey-card h3{font-size:15px;margin:10px 0 4px}
+.is-empty-home .journey-card p{font-size:12px;line-height:1.45}
+.is-empty-home .start-help{justify-content:flex-start;gap:10px;margin-top:14px;padding:11px 16px}
+.is-empty-home .start-help strong{flex:0 0 auto;font-size:12px;color:#94552e}
+.is-empty-home .start-help span{font-size:12px}
+@media(max-width:850px){
+  .topbar{height:auto;min-height:62px}
+  .is-empty-home .welcome-first{padding:24px;gap:16px}
+  .is-empty-home .welcome-art{max-width:155px}
+}
+@media(max-width:560px){
+  .topbar{min-height:58px}
+  .brand{font-size:18px}
+  .brand img{width:38px;height:36px}
+  .is-empty-home .page-heading h1{font-size:28px}
+  .is-empty-home .welcome-first{padding:22px 18px}
+  .is-empty-home .welcome-first h2{font-size:25px;max-width:none;padding-right:77px}
+  .is-empty-home .welcome-copy>p:not(.welcome-links){font-size:13px}
+  .is-empty-home .welcome-first .welcome-actions{margin-top:14px}
+  .is-empty-home .welcome-art{width:74px}
+  .is-empty-home .welcome-art img{width:74px;max-height:74px}
+  .is-empty-home .journey-card{min-height:0;padding:15px 16px 15px 64px}
+  .is-empty-home .journey-card h3{margin:0 28px 3px 0}
+  .is-empty-home .start-help{align-items:flex-start;gap:4px;flex-direction:column}
+}
