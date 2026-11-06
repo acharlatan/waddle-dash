@@ -3,7 +3,7 @@ import {conversionLabel, metricSummary, normalizeDefinition} from './marketing.j
 const present=(rows,key)=>rows.some(row=>Number.isFinite(row[key]));
 const number=n=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:6}).format(n):'not recorded';
 const money=(n,currency)=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{style:'currency',currency:currency||'USD',maximumFractionDigits:2}).format(n):'not recorded';
-const qualityIssue=data=>(data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)');
+const qualityIssue=data=>!!data?.qualityUnknown||(data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)');
 
 // Keep the existing value questions available without recommending ROAS for every goal.
 export function askQuestions(goal,data,rows=[]){

@@ -179,6 +179,7 @@ export function comparisonCoverage(previous, current, days, datasets=[]) {
   const reasons=[], differences=[];
   if (!Number.isFinite(Number(days)) || Number(days)<1 || !previous.length || !current.length) return {safe:false,reasons:['Two equal date windows with recorded data are needed.'],differences};
   const n=Number(days), prevDates=new Set(previous.map(r=>r.date)), curDates=new Set(current.map(r=>r.date));
+  if(datasets.some(d=>d?.qualityUnknown)) reasons.push('The original import quality history is unavailable. Reimport the original report before comparing.');
   if(datasets.some(d=>(d?.errors||[]).some(e=>e.reason!=='summary row (excluded)'))) reasons.push('The import excluded invalid records, so period totals may be incomplete. Correct the source file and reimport to compare safely.');
   if(datasets.some(d=>(d?.duplicates||0)>0)) reasons.push('The import retained exact duplicate records; review and remove any unintended duplicates before comparing.');
   if (prevDates.size!==n || curDates.size!==n) reasons.push('Both periods need recorded rows on every date; days without rows are not treated as zero.');

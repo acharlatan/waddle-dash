@@ -18,7 +18,7 @@ export function metricSummary(rows,definition='unknown'){
 export function rankChannelsByValue(rows,data,metric){
  if(!['revenue','roas'].includes(metric))return {error:'Choose a supported channel metric.'};
  if(!rows.length)return {error:'Add a report with recorded rows first.'};
- if((data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)'))return {error:'Review retained duplicates or excluded invalid records before ranking channels.'};
+ if(data?.qualityUnknown||(data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)'))return {error:'Review import quality history, retained duplicates or excluded invalid records before ranking channels.'};
  const grouped=new Map();
  for(const row of rows){const label=row.channel||'Unknown';if(!grouped.has(label))grouped.set(label,[]);grouped.get(label).push(row)}
  const channels=[...grouped].map(([label,records])=>({label,records,...metricSummary(records,data?.conversionDefinition)}));

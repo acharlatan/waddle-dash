@@ -3,7 +3,7 @@ export const WORKSPACE_PAGES = Object.freeze({
  overview: 'home',
  investigate: 'investigate', mystery: 'investigate', campaigns: 'investigate',
  channels: 'investigate', insights: 'investigate', ask: 'investigate',
- work: 'work', planner: 'work', timeline: 'work',
+ work: 'work', planner: 'work', investigations: 'work', timeline: 'work',
  report: 'reports', guide: 'settings', data: 'settings'
 });
 
@@ -12,7 +12,7 @@ export const WORKSPACE_LINKS = Object.freeze({
   ['investigate', 'Start here'], ['mystery', 'Mystery Lab'], ['campaigns', 'Campaigns'],
   ['channels', 'Channels'], ['insights', 'Insights'], ['ask', 'Ask Waddle']
  ],
- work: [['work', 'Start here'], ['planner', 'My next step'], ['timeline', 'Time Machine']]
+ work: [['work', 'Start here'], ['planner', 'My next step'], ['investigations', 'Saved investigations'], ['timeline', 'Time Machine']]
 });
 
 export function pageFromHash(hash) {
@@ -51,11 +51,22 @@ export function orderedAskQuestions(goal) {
  return goal==='Sales' ? [...value,...general] : [...general,...value];
 }
 
+// A linked follow-up changes the dataset, but carries forward the user's drafts.
+// Ordinary imports start a separate session after the replacement confirmation.
+export function draftsForImport(state, linkedFollowup) {
+ if (!linkedFollowup) return {plan:{},report:{},planCaseType:'',checkins:[]};
+ return {
+  plan:structuredClone(state.plan || {}), report:structuredClone(state.report || {}),
+  planCaseType:state.planCaseType || '', checkins:structuredClone(state.checkins || [])
+ };
+}
+
 // Each mode keeps its own in-memory navigation and draft context. No storage writes occur here.
 const SESSION_FIELDS = [
  'data', 'name', 'example', 'goal', 'days', 'metric', 'sort', 'caseType',
  'compareA', 'compareB', 'compareConfirmed', 'report', 'plan', 'search', 'question',
- 'hasCampaignSelection', 'campaign', 'campaignChannel', 'campaignReturn', 'hasChannelSelection', 'selectedChannel', 'channelReturn', 'planCaseType'
+ 'hasCampaignSelection', 'campaign', 'campaignChannel', 'campaignReturn', 'hasChannelSelection', 'selectedChannel', 'channelReturn', 'planCaseType',
+ 'caseContext','investigationTitle','investigationId','investigationRootId','investigationDirty','checkins'
 ];
 
 export function switchSessionMode(state, slots, mode, createDemo) {
@@ -64,7 +75,8 @@ export function switchSessionMode(state, slots, mode, createDemo) {
  const empty = {
   data:null, name:'', example:false, goal:'Sales', days:'30', metric:'revenue', sort:'revenue',
   caseType:'expensive', compareA:'', compareB:'', compareConfirmed:false, report:{}, plan:{},
-  search:'', question:'', hasCampaignSelection:false, campaign:'', campaignChannel:'', campaignReturn:'', hasChannelSelection:false, selectedChannel:'', channelReturn:'', planCaseType:''
+  search:'', question:'', hasCampaignSelection:false, campaign:'', campaignChannel:'', campaignReturn:'', hasChannelSelection:false, selectedChannel:'', channelReturn:'', planCaseType:'',
+  caseContext:null,investigationTitle:'',investigationId:'',investigationRootId:'',investigationDirty:false,checkins:[]
  };
  const next = slots[mode] || (mode === 'demo' ? {...empty, ...createDemo()} : empty);
  Object.assign(state, next, {mode});

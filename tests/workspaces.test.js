@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WORKSPACE_LINKS,pageFromHash,workspaceForPage,switchSessionMode,orderedAskQuestions} from '../public/workspaces.js';
+import {WORKSPACE_LINKS,pageFromHash,workspaceForPage,switchSessionMode,orderedAskQuestions,draftsForImport} from '../public/workspaces.js';
 
 test('legacy routes remain reachable and identify their parent workspace',()=>{
  const routes={overview:'home',mystery:'investigate',campaigns:'investigate',channels:'investigate',insights:'investigate',ask:'investigate',planner:'work',timeline:'work',report:'reports',guide:'settings',data:'settings'};
@@ -12,7 +12,7 @@ test('legacy routes remain reachable and identify their parent workspace',()=>{
  assert.equal(pageFromHash('#work'),'work');
  assert.equal(pageFromHash('#unrecognized'),'overview');
  assert.deepEqual(WORKSPACE_LINKS.investigate.map(([page])=>page),['investigate','mystery','campaigns','channels','insights','ask']);
- assert.deepEqual(WORKSPACE_LINKS.work.map(([page])=>page),['work','planner','timeline']);
+ assert.deepEqual(WORKSPACE_LINKS.work.map(([page])=>page),['work','planner','investigations','timeline']);
 });
 
 test('switching modes restores each session’s dataset, filters, selected campaign, and edited work',()=>{
@@ -46,4 +46,13 @@ test('Ask Waddle prioritizes relevant general questions outside sales without re
  assert.deepEqual(orderedAskQuestions('Leads or inquiries'),['changes','coverage','best','revenue']);
  assert.deepEqual(orderedAskQuestions('Website activity'),['changes','coverage','best','revenue']);
  assert.deepEqual(orderedAskQuestions('Sales'),['best','revenue','changes','coverage']);
+});
+
+test('a linked later report retains independent copies of the plan, report edits and check-ins',()=>{
+ const state={plan:{noticed:'Original plan'},report:{notes:'Existing edit',checkin:'Earlier check-in'},planCaseType:'expensive',checkins:[{earlierSnapshotId:'fictional'}]};
+ const followup=draftsForImport(state,true);
+ assert.deepEqual(followup,{plan:state.plan,report:state.report,planCaseType:'expensive',checkins:state.checkins});
+ followup.plan.noticed='Later edit';followup.report.notes='Later note';followup.checkins[0].earlierSnapshotId='different';
+ assert.equal(state.plan.noticed,'Original plan');assert.equal(state.report.notes,'Existing edit');assert.equal(state.checkins[0].earlierSnapshotId,'fictional');
+ assert.deepEqual(draftsForImport(state,false),{plan:{},report:{},planCaseType:'',checkins:[]});
 });

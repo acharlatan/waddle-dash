@@ -6,7 +6,7 @@ const nonNegative=(rows,fields)=>rows.every(r=>fields.every(k=>r[k]===null||r[k]
 const number=n=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:6}).format(n):'unavailable';
 const money=(n,currency='USD')=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:2}).format(n):'unavailable';
 const validCost=(s,rows)=>complete(s,'spend')&&complete(s,'conversions')&&nonNegative(rows,['spend','conversions'])&&s.conversions>0 ? s.spend/s.conversions : null;
-const qualityIssue=data=>(data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)');
+const qualityIssue=data=>!!data?.qualityUnknown||(data?.duplicates||0)>0||(data?.errors||[]).some(e=>e.reason!=='summary row (excluded)');
 
 // Group by both campaign and channel, so same-named campaigns do not merge.
 export function campaignGroups(rows) {
