@@ -117,7 +117,7 @@ function overview(period){
  if(!state.data) return `<section class="welcome-window welcome-first" aria-labelledby="welcome-title">
   <div class="welcome-copy">
     <span class="eyebrow">START HERE ✦</span>
-    <h2 id="welcome-title">Start with a report. Find your next move.</h2>
+    <h2 id="welcome-title">Start with a report.</h2>
     <p>Upload a supported campaign CSV or explore with fictional data. Waddle helps you follow the evidence and turn it into a practical plan.</p>
     <div class="welcome-actions">
       <button class="button button-primary" data-upload>↥ &nbsp; Upload campaign CSV</button>
