@@ -96,4 +96,9 @@
 @media (prefers-reduced-transparency:reduce) {
  .topbar,.sidebar,.workspace-tabs,.dataset-bar,.home-welcome,.home-summary,.home-briefing,.home-action-card,.home-privacy-card,.home-performance,.workspace-intro,.mystery-intro,.panel,.case-file,.report-sheet,.home-path-card,.home-help-line,.home-demo-notice { background:#fffdf8!important; -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
  .home-welcome-copy,.home-privacy-strip { background:#fffaf3!important; }
+ /* Retain the section artwork and color when transparency is reduced. */
+ .workspace-intro,.mystery-intro { background:radial-gradient(circle at 91% 50%,#ffe7c7 0 96px,transparent 97px),linear-gradient(110deg,#fffdf8,#e7f5f7)!important; }
+}
+@media screen and (max-width:650px) and (prefers-reduced-transparency:reduce) {
+ .workspace-intro,.mystery-intro { background:radial-gradient(circle at 90% 24%,#ffe7c7 0 48px,transparent 49px),linear-gradient(110deg,#fffdf8,#e7f5f7)!important; }
 }
