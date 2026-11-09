@@ -49,8 +49,9 @@
  .work-shortcut-icon.report-icon { color:#a86122; background:#ffebc1; }
  .work-privacy { color:#674c3e; font-size:12px; line-height:1.55; margin:0 3px; }
  .work-privacy span { color:#c05c2e; font-size:20px; vertical-align:middle; }
- .work-coverage { margin:18px 2px; color:#61473a; }
- .work-coverage summary { min-height:44px; padding:10px 0; }
+ .work-coverage { margin:0 0 14px; padding:0 14px; border:1px solid #cfe5d9; border-radius:14px; background:rgba(235,248,241,.88); color:#355a48; }
+ .work-coverage summary { min-height:44px; padding:10px 0; color:#315b47; }
+ .work-coverage summary span { font-size:12px; font-weight:500; }
  .work-coverage .coverage-box { margin:0 0 12px; }
  .work-planner { padding:clamp(20px,3vw,34px); }
  .work-planner-heading { display:flex; align-items:start; justify-content:space-between; gap:16px; }
