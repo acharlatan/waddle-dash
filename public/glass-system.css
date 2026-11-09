@@ -27,6 +27,8 @@
   .home-art-label { background:rgba(255,251,244,.82); border-color:rgba(255,255,255,.88); box-shadow:0 4px 12px rgba(73,44,29,.1); }
   .home-privacy-strip { background:rgba(255,253,248,.82); border-color:rgba(220,197,181,.65); }
   .home-summary,.home-performance,.wide-panel,.case-file,.report-sheet,.panel { background:rgba(255,253,249,.92); }
+  /* Keep the artwork visible even when backdrop blur is unavailable. */
+  .workspace-intro,.mystery-intro { background:radial-gradient(circle at 91% 50%,rgba(255,226,187,.8) 0 96px,transparent 97px),linear-gradient(110deg,rgba(255,253,248,.95),rgba(224,244,248,.88)); }
   .home-briefing,.home-action-card { background:linear-gradient(145deg,rgba(255,253,247,.94),rgba(255,243,228,.87)); }
   .home-privacy-card { background:rgba(232,247,243,.9); }
   .home-path-card,.workspace-card,.case-choice,.info-card,.channel-card,.time-card,.saved-investigation {
@@ -92,13 +94,4 @@
 @media screen and (max-width:650px) {
  .home-welcome-art { margin:0 12px 12px; min-height:230px; }
  .workspace-intro,.mystery-intro { background:radial-gradient(circle at 90% 24%,rgba(255,226,190,.72) 0 48px,transparent 49px),linear-gradient(110deg,rgba(255,253,248,.8),rgba(229,246,248,.72)); }
-}
-@media (prefers-reduced-transparency:reduce) {
- .topbar,.sidebar,.workspace-tabs,.dataset-bar,.home-welcome,.home-summary,.home-briefing,.home-action-card,.home-privacy-card,.home-performance,.workspace-intro,.mystery-intro,.panel,.case-file,.report-sheet,.home-path-card,.home-help-line,.home-demo-notice { background:#fffdf8!important; -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
- .home-welcome-copy,.home-privacy-strip { background:#fffaf3!important; }
- /* Retain the section artwork and color when transparency is reduced. */
- .workspace-intro,.mystery-intro { background:radial-gradient(circle at 91% 50%,#ffe7c7 0 96px,transparent 97px),linear-gradient(110deg,#fffdf8,#e7f5f7)!important; }
-}
-@media screen and (max-width:650px) and (prefers-reduced-transparency:reduce) {
- .workspace-intro,.mystery-intro { background:radial-gradient(circle at 90% 24%,#ffe7c7 0 48px,transparent 49px),linear-gradient(110deg,#fffdf8,#e7f5f7)!important; }
 }
