@@ -1,0 +1,99 @@
+/* Waddle's glass system: translucent shells, quieter inner layers and readable data. */
+@media screen {
+  :root {
+    --glass-edge: rgba(255,255,255,.84);
+    --glass-fallback: rgba(255,252,247,.94);
+    --glass-shadow: 0 14px 38px rgba(98,69,48,.11), 0 3px 10px rgba(83,67,55,.05), inset 0 1px 0 rgba(255,255,255,.9);
+    --glass-inner: inset 0 1px 0 rgba(255,255,255,.85), 0 5px 18px rgba(113,78,55,.055);
+  }
+  body {
+    background: linear-gradient(125deg,rgba(211,236,251,.65),rgba(255,246,227,.64)),url('./assets/waddle-world.webp') center bottom/cover fixed no-repeat #e4f0f5;
+  }
+  .topbar,.sidebar,.workspace-tabs,.dataset-bar,
+  .home-welcome,.home-summary,.home-briefing,.home-action-card,.home-privacy-card,.home-performance,
+  .workspace-intro,.mystery-intro,.panel,.case-file,.report-sheet,
+  .home-path-card,.home-help-line,.home-demo-notice {
+    background-color:var(--glass-fallback);
+    border:1px solid var(--glass-edge);
+    box-shadow:var(--glass-shadow);
+  }
+  .topbar { background:linear-gradient(115deg,rgba(255,255,255,.94),rgba(255,249,240,.88)); }
+  .sidebar { background:linear-gradient(160deg,rgba(255,255,255,.94),rgba(235,248,248,.87)); }
+  .workspace-tabs,.dataset-bar { background:rgba(255,252,248,.92); }
+  .workspace-intro,.mystery-intro { background:radial-gradient(circle at 91% 50%,rgba(255,226,187,.8) 0 96px,transparent 97px),linear-gradient(110deg,rgba(255,253,248,.95),rgba(224,244,248,.88)); }
+  .home-welcome { background:rgba(255,251,244,.92); }
+  .home-welcome-copy { background:linear-gradient(130deg,rgba(255,255,255,.93),rgba(255,242,226,.84)); }
+  .home-welcome-art { margin:12px 12px 12px 0; min-height:366px; border-radius:17px; box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 8px 24px rgba(124,76,40,.1); }
+  .home-art-label { background:rgba(255,251,244,.82); border-color:rgba(255,255,255,.88); box-shadow:0 4px 12px rgba(73,44,29,.1); }
+  .home-privacy-strip { background:rgba(255,253,248,.82); border-color:rgba(220,197,181,.65); }
+  .home-summary,.home-performance,.wide-panel,.case-file,.report-sheet,.panel { background:rgba(255,253,249,.92); }
+  .home-briefing,.home-action-card { background:linear-gradient(145deg,rgba(255,253,247,.94),rgba(255,243,228,.87)); }
+  .home-privacy-card { background:rgba(232,247,243,.9); }
+  .home-path-card,.workspace-card,.case-choice,.info-card,.channel-card,.time-card,.saved-investigation {
+    border:1px solid rgba(255,255,255,.88); box-shadow:var(--glass-inner);
+  }
+  .home-path-investigate,.workspace-card:nth-child(2),.workspace-card:nth-child(5) { background:rgba(234,248,248,.9); }
+  .home-path-work,.workspace-card:nth-child(3) { background:rgba(255,248,230,.91); }
+  .home-path-report { background:rgba(255,241,233,.91); }
+  .workspace-card,.case-choice,.info-card,.time-card,.saved-investigation { background:rgba(255,253,248,.9); }
+  .workspace-card.feature-card { background:linear-gradient(130deg,rgba(255,237,219,.92),rgba(255,253,247,.86)); }
+  .home-summary .metric-card,.home-clue,.channel-card,.case-evidence article,.planner-grid label,.report-label,.report-metrics>div { background:rgba(255,250,242,.86); border:1px solid rgba(225,204,188,.7); box-shadow:inset 0 1px rgba(255,255,255,.75); }
+  .home-summary .metric-card:nth-child(2),.home-clue:nth-child(4) { background:rgba(255,248,225,.88); }
+  .home-summary .metric-card:nth-child(3),.home-clue:nth-child(3) { background:rgba(231,246,251,.88); }
+  .home-summary .metric-card:nth-child(4) { background:rgba(255,240,234,.88); }
+  .home-clue:nth-child(2),.channel-card { background:rgba(233,248,242,.88); }
+  .case-choice.chosen { background:rgba(255,230,210,.95); border-color:#ce8b68; box-shadow:inset 0 -3px #d6835c,0 6px 18px rgba(158,91,52,.12); }
+  .case-question,.coverage-box { background:rgba(230,247,241,.93); border:1px solid rgba(189,222,208,.85); }
+  .home-demo-notice,.notice { background:rgba(255,246,226,.94); border-color:rgba(231,203,156,.8); }
+  .home-help-line { background:rgba(255,251,242,.9); }
+  .nav-link.active,.workspace-tabs a[aria-current=page],.workspace-tabs a.active { background:rgba(255,225,205,.9); border-color:rgba(226,164,130,.75); }
+  .privacy-pill,.home-art-label,.mode-switch { background-color:rgba(255,251,246,.76); border:1px solid rgba(255,255,255,.9); box-shadow:inset 0 1px rgba(255,255,255,.9); }
+  .home-demo-button,.button-soft,.question { background:rgba(255,250,242,.83); border-color:rgba(224,190,169,.86); }
+  .table-box,.toolbar { background:rgba(255,250,243,.82); border-color:rgba(232,212,196,.8); }
+  .table-scroll { background:rgba(255,253,249,.94); border-color:rgba(224,207,192,.9); }
+  .table-scroll th { background:rgba(247,237,226,.98); }
+  .table-scroll tbody tr:nth-child(even) { background:rgba(255,249,241,.9); }
+  input,textarea,select,.search,.planner-grid textarea,.report-label textarea { background-color:rgba(255,254,251,.96); color:#543328; border-color:#d8c5b7; }
+  dialog { background:rgba(255,252,247,.97); border:1px solid rgba(255,255,255,.94); box-shadow:0 24px 80px rgba(64,43,32,.3),inset 0 1px rgba(255,255,255,.95); }
+  dialog::backdrop { background:rgba(49,40,38,.48); backdrop-filter:blur(5px); }
+  .dropzone { background:rgba(255,246,234,.92); }
+  /* Browser print preview is a paper document, not a translucent app panel. */
+  .print-preview .report-sheet { background:#fff!important; backdrop-filter:none!important; -webkit-backdrop-filter:none!important; }
+}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+ @media screen {
+  .topbar,.sidebar,.workspace-tabs,.dataset-bar,
+  .home-welcome,.home-summary,.home-briefing,.home-action-card,.home-privacy-card,.home-performance,
+  .workspace-intro,.mystery-intro,.panel,.case-file,.report-sheet,
+  .home-path-card,.home-help-line,.home-demo-notice {
+    -webkit-backdrop-filter:blur(19px) saturate(135%);
+    backdrop-filter:blur(19px) saturate(135%);
+  }
+  .topbar { background:linear-gradient(115deg,rgba(255,255,255,.74),rgba(255,247,237,.61)); }
+  .sidebar { background:linear-gradient(160deg,rgba(255,255,255,.76),rgba(225,245,246,.62)); }
+  .workspace-tabs,.dataset-bar { background:rgba(255,252,247,.73); }
+  .home-welcome { background:rgba(255,250,241,.43); }
+  .home-welcome-copy { background:linear-gradient(130deg,rgba(255,255,255,.38),rgba(255,239,222,.32)); }
+  .home-privacy-strip { background:rgba(255,253,248,.46); }
+  .home-summary,.home-performance,.wide-panel,.case-file,.report-sheet,.panel { background:rgba(255,253,249,.73); }
+  .home-briefing,.home-action-card { background:linear-gradient(145deg,rgba(255,253,247,.78),rgba(255,241,226,.66)); }
+  .home-privacy-card { background:rgba(229,247,242,.76); }
+  .workspace-intro,.mystery-intro { background:radial-gradient(circle at 91% 50%,rgba(255,225,184,.7) 0 96px,transparent 97px),linear-gradient(110deg,rgba(255,253,248,.75),rgba(225,244,248,.65)); }
+  .home-path-investigate { background:rgba(229,248,248,.69); }.home-path-work { background:rgba(255,247,224,.71); }.home-path-report { background:rgba(255,237,227,.70); }
+  .home-help-line { background:rgba(255,251,242,.71); }.home-demo-notice { background:rgba(255,246,226,.82); }
+  .workspace-card,.case-choice { -webkit-backdrop-filter:blur(15px) saturate(130%); backdrop-filter:blur(15px) saturate(130%); background:rgba(255,253,248,.72); }
+  .workspace-card.feature-card { background:linear-gradient(130deg,rgba(255,237,219,.76),rgba(255,253,247,.65)); }
+  .workspace-card:nth-child(2),.workspace-card:nth-child(5) { background:rgba(234,248,248,.7); }
+  .workspace-card:nth-child(3) { background:rgba(255,248,230,.72); }
+  .case-choice.chosen { background:rgba(255,230,210,.9); }
+  .home-art-label { -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+ }
+}
+@media screen and (max-width:650px) {
+ .home-welcome-art { margin:0 12px 12px; min-height:230px; }
+ .workspace-intro,.mystery-intro { background:radial-gradient(circle at 90% 24%,rgba(255,226,190,.72) 0 48px,transparent 49px),linear-gradient(110deg,rgba(255,253,248,.8),rgba(229,246,248,.72)); }
+}
+@media (prefers-reduced-transparency:reduce) {
+ .topbar,.sidebar,.workspace-tabs,.dataset-bar,.home-welcome,.home-summary,.home-briefing,.home-action-card,.home-privacy-card,.home-performance,.workspace-intro,.mystery-intro,.panel,.case-file,.report-sheet,.home-path-card,.home-help-line,.home-demo-notice { background:#fffdf8!important; -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+ .home-welcome-copy,.home-privacy-strip { background:#fffaf3!important; }
+}
