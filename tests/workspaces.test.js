@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WORKSPACE_LINKS,pageFromHash,workspaceForPage,switchSessionMode,orderedAskQuestions,draftsForImport,laterReportGoal} from '../public/workspaces.js';
+import {WORKSPACE_LINKS,pageFromHash,workspaceForPage,switchSessionMode,orderedAskQuestions,draftsForImport,isBlankReportDraft,laterReportGoal} from '../public/workspaces.js';
 
 test('legacy routes remain reachable and identify their parent workspace',()=>{
  const routes={overview:'home',mystery:'investigate',campaigns:'investigate',channels:'investigate',insights:'investigate',ask:'investigate',planner:'work',timeline:'work',report:'reports',guide:'settings',data:'settings'};
@@ -65,4 +65,13 @@ test('a later-report import retains the active personal goal without taking it f
  assert.equal(laterReportGoal({...s,mode:'demo'}),null);
  assert.equal(laterReportGoal({...s,data:null}),null);
  assert.equal(laterReportGoal({...s,goal:'unrecognized'}),null);
+});
+
+test('a first import can preserve a deliberately written blank report without carrying unrelated sessions',()=>{
+ const blank={data:null,report:{blankDraft:true,title:'My draft',notes:'Keep these words'},plan:{test:'Review the setup'}};
+ assert.equal(isBlankReportDraft(blank),true);
+ assert.deepEqual(draftsForImport(blank,isBlankReportDraft(blank)).report,blank.report);
+ assert.equal(isBlankReportDraft({...blank,data:{records:[]}}),false);
+ assert.equal(isBlankReportDraft({data:null,report:{notes:'Other session'}}),false);
+ assert.equal(isBlankReportDraft(null),false);
 });

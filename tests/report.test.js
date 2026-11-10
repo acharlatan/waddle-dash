@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination} from '../public/report.js';
+import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt} from '../public/report.js';
 
 test('report provenance retains the actual source, definitions and selected period',()=>{
  const context={name:'Fictional leads.csv',source:'google',goal:'Leads or inquiries',currency:'USD',conversion:'Recorded leads',conversionConfirmed:true,example:false};
@@ -45,4 +45,26 @@ test('a report can return to its identifiable added case without guessing for ot
  assert.deepEqual(caseReportDestination({investigation:'A dated case',investigationCaseType:'unknown'}),{href:'#mystery',label:'Open Mystery Lab'});
  assert.deepEqual(caseReportDestination({investigation:'',investigationCaseType:'spending'}),{href:'#mystery',label:'Open Mystery Lab'});
  assert.deepEqual(caseReportDestination({}),{href:'#mystery',label:'Open Mystery Lab'});
+});
+
+test('new reports default to available goal metrics, including legitimate zeroes',()=>{
+ const summary={spend:700,revenue:null,conversions:0,clicks:42,impressions:100,cpc:0,ctr:0.42,cvr:0,roas:null};
+ const choices=reportMetricSelection({},summary,['spend','conversions','revenue']);
+ assert.equal(choices.include_spend,true);assert.equal(choices.include_conversions,true);
+ assert.equal(choices.include_revenue,false);assert.equal(choices.include_clicks,false);
+});
+
+test('saved reports preserve metric choices and old reports retain their previous available defaults',()=>{
+ const summary={spend:700,revenue:100,conversions:2,clicks:42,impressions:100,cpc:10,ctr:0.42,cvr:0.05,roas:0.14};
+ const explicit=reportMetricSelection({include_spend:false,include_clicks:true},summary,['conversions']);
+ assert.equal(explicit.include_spend,false);assert.equal(explicit.include_clicks,true);assert.equal(explicit.include_revenue,true);
+ const legacy=reportMetricSelection({},summary,['conversions'],true);
+ assert.equal(legacy.include_spend,true);assert.equal(legacy.include_revenue,true);assert.equal(legacy.include_clicks,true);
+});
+
+test('briefing append includes only the observations the user selected',()=>{
+ const items=[{section:'What changed',title:'Recorded leads fell',body:'56 to 21.',limit:'No cause established.'},{section:'Worth a closer look',title:'Look at Generic Search',body:'Spend was $700.',limit:'Coverage is uncertain.'}];
+ const text=selectedBriefingExcerpt(items,'Fictional report · October',['Worth a closer look']);
+ assert.match(text,/Generic Search/);assert.match(text,/October/);assert.doesNotMatch(text,/56 to 21/);
+ assert.equal(selectedBriefingExcerpt(items,'Fictional report',[]),'');
 });

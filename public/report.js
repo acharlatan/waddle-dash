@@ -36,3 +36,18 @@ export function caseReportDestination(report) {
  const type=typeof report?.investigation==='string'&&report.investigation.trim()&&['expensive','spending','results'].includes(report.investigationCaseType)?report.investigationCaseType:'';
  return type?{href:'#mystery',label:'Return to added case',caseType:type}:{href:'#mystery',label:'Open Mystery Lab'};
 }
+
+// Default new reports to available goal-relevant metrics. Existing explicit choices,
+// and the original all-available default on older saved reports, remain intact.
+export function reportMetricSelection(report, summary, goalKeys, legacy=false) {
+ const keys=['spend','revenue','conversions','clicks','impressions','cpc','ctr','cvr','roas'];
+ const hasChoices=keys.some(key=>Object.hasOwn(report||{},`include_${key}`));
+ const defaults=new Set(legacy||hasChoices?keys:goalKeys);
+ return Object.fromEntries(keys.map(key=>[`include_${key}`,report?.[`include_${key}`]??(defaults.has(key)&&summary[key]!==null&&summary[key]!==undefined)]));
+}
+
+// An explicit selection chooses which briefing observations are appended.
+export function selectedBriefingExcerpt(items, provenance, selectedSections) {
+ const allowed=new Set(selectedSections||[]);
+ return briefingExcerpt(items.filter(item=>allowed.has(item.section)),provenance);
+}

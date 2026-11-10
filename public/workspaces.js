@@ -51,8 +51,14 @@ export function orderedAskQuestions(goal) {
  return goal==='Sales' ? [...value,...general] : [...general,...value];
 }
 
-// A linked follow-up changes the dataset, but carries forward the user's drafts.
-// Ordinary imports start a separate session after the replacement confirmation.
+// Preserve a deliberately started blank report when its first dataset is added.
+// Once a dataset exists, ordinary imports still require replacement confirmation.
+export function isBlankReportDraft(state) {
+ return !state?.data && state?.report?.blankDraft === true;
+}
+
+// A linked follow-up or a first import into a blank report carries drafts forward.
+// Other imports start a separate session after the replacement confirmation.
 export function draftsForImport(state, linkedFollowup) {
  if (!linkedFollowup) return {plan:{},report:{},planCaseType:'',checkins:[]};
  return {
