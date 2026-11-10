@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt,reportLeadSuggestion} from '../public/report.js';
+import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt,reportLeadSuggestion,capturedInvestigationExcerpt} from '../public/report.js';
 
 test('report provenance retains the actual source, definitions and selected period',()=>{
  const context={name:'Fictional leads.csv',source:'google',goal:'Leads or inquiries',currency:'USD',conversion:'Recorded leads',conversionConfirmed:true,example:false};
@@ -76,4 +76,14 @@ test('report studio highlights only an available briefing clue or recorded chang
  assert.equal(reportLeadSuggestion([change]),change);
  assert.equal(reportLeadSuggestion([{section:'Worth a closer look',title:'No safe standout yet'}]),null);
  assert.equal(reportLeadSuggestion([]),null);
+});
+
+
+test('captured investigation retains original evidence and does not use the active report dates',()=>{
+ const context={question:'Why did recorded leads fall?',campaign:'Generic Search',channel:'Paid Search',selectedPeriod:{start:'2026-10-08',end:'2026-10-14'},earlierPeriod:{start:'2026-10-01',end:'2026-10-07'},observation:'56 → 21; $12.50 → $33.33',limitations:'The cause is not established.'};
+ const text=capturedInvestigationExcerpt(context,true);
+ for(const value of ['FICTIONAL DEMO','2026-10-08','2026-10-01','Generic Search · Paid Search','56 → 21','not established'])assert.ok(text.includes(value),value);
+ assert.equal(capturedInvestigationExcerpt({...context,observation:''}),'');
+ assert.equal(capturedInvestigationExcerpt(null),'');
+ assert.equal(capturedInvestigationExcerpt({...context,selectedPeriod:null}),'');
 });

@@ -56,3 +56,12 @@ export function selectedBriefingExcerpt(items, provenance, selectedSections) {
 export function reportLeadSuggestion(items) {
  return (items || []).find(item => item.section === 'Worth a closer look' && item.title?.startsWith('Look at ')) || (items || []).find(item => item.section === 'What changed') || null;
 }
+
+// Use captured evidence rather than the currently selected period or dataset.
+export function capturedInvestigationExcerpt(context, example=false) {
+ if(!context || !context.observation || !context.selectedPeriod?.start || !context.selectedPeriod?.end)return '';
+ const selected=`${context.selectedPeriod.start} – ${context.selectedPeriod.end}`;
+ const earlier=context.earlierPeriod?.start&&context.earlierPeriod?.end?`\nEarlier comparison: ${context.earlierPeriod.start} – ${context.earlierPeriod.end}`:'';
+ const identity=[context.campaign,context.channel].filter(Boolean).join(' · ');
+ return `${example?'FICTIONAL DEMO · ':''}Captured investigation · Original selected period: ${selected}${earlier}\nSource: ${reportSourceLabel(context.source)} · Goal: ${context.goal||'Not recorded'} · Currency: ${context.currency||'Not recorded'} · Conversion definition: ${context.conversionDefinition||'unknown'}${identity?`\nCampaign / channel: ${identity}`:''}\nQuestion: ${context.question||'Not recorded'}\nEvidence: ${context.observation}\nLimitations: ${context.limitations||'Not recorded'}`;
+}
