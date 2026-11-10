@@ -51,3 +51,8 @@ export function selectedBriefingExcerpt(items, provenance, selectedSections) {
  const allowed=new Set(selectedSections||[]);
  return briefingExcerpt(items.filter(item=>allowed.has(item.section)),provenance);
 }
+
+// Surface only an observation already produced by the rule-based Briefing.
+export function reportLeadSuggestion(items) {
+ return (items || []).find(item => item.section === 'Worth a closer look' && item.title?.startsWith('Look at ')) || (items || []).find(item => item.section === 'What changed') || null;
+}

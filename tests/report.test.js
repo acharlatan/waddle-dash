@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt} from '../public/report.js';
+import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt,reportLeadSuggestion} from '../public/report.js';
 
 test('report provenance retains the actual source, definitions and selected period',()=>{
  const context={name:'Fictional leads.csv',source:'google',goal:'Leads or inquiries',currency:'USD',conversion:'Recorded leads',conversionConfirmed:true,example:false};
@@ -67,4 +67,13 @@ test('briefing append includes only the observations the user selected',()=>{
  const text=selectedBriefingExcerpt(items,'Fictional report · October',['Worth a closer look']);
  assert.match(text,/Generic Search/);assert.match(text,/October/);assert.doesNotMatch(text,/56 to 21/);
  assert.equal(selectedBriefingExcerpt(items,'Fictional report',[]),'');
+});
+
+test('report studio highlights only an available briefing clue or recorded change',()=>{
+ const change={section:'What changed',title:'Recorded leads decreased'};
+ const clue={section:'Worth a closer look',title:'Look at Generic Search · Paid Search'};
+ assert.equal(reportLeadSuggestion([change,clue]),clue);
+ assert.equal(reportLeadSuggestion([change]),change);
+ assert.equal(reportLeadSuggestion([{section:'Worth a closer look',title:'No safe standout yet'}]),null);
+ assert.equal(reportLeadSuggestion([]),null);
 });
