@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt,reportLeadSuggestion,capturedInvestigationExcerpt} from '../public/report.js';
+import {reportSourceLabel,reportProvenance,briefingExcerpt,planExcerpt,appendReportText,caseReportDestination,reportMetricSelection,selectedBriefingExcerpt,reportLeadSuggestion,capturedInvestigationExcerpt,reportSavingNotice} from '../public/report.js';
 
 test('report provenance retains the actual source, definitions and selected period',()=>{
  const context={name:'Fictional leads.csv',source:'google',goal:'Leads or inquiries',currency:'USD',conversion:'Recorded leads',conversionConfirmed:true,example:false};
@@ -86,4 +86,12 @@ test('captured investigation retains original evidence and does not use the acti
  assert.equal(capturedInvestigationExcerpt({...context,observation:''}),'');
  assert.equal(capturedInvestigationExcerpt(null),'');
  assert.equal(capturedInvestigationExcerpt({...context,selectedPeriod:null}),'');
+});
+
+test('report saving guidance distinguishes demo, empty drafts, and personal reports',()=>{
+ assert.match(reportSavingNotice(true,true),/clear on refresh/);
+ assert.match(reportSavingNotice(true,true),/not saved with your personal work/);
+ assert.match(reportSavingNotice(false,false),/Load a report before saving/);
+ assert.match(reportSavingNotice(false,true),/explicitly save/);
+ assert.match(reportSavingNotice(false,true),/browser storage is cleared/);
 });

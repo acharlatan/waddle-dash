@@ -57,6 +57,13 @@ export function reportLeadSuggestion(items) {
  return (items || []).find(item => item.section === 'Worth a closer look' && item.title?.startsWith('Look at ')) || (items || []).find(item => item.section === 'What changed') || null;
 }
 
+// Demo drafts cannot be saved with personal investigations or snapshots.
+export function reportSavingNotice(example, hasData) {
+ if (example) return 'Fictional demo edits stay in this session and clear on refresh. They are not saved with your personal work.';
+ if (!hasData) return 'This draft stays in this session. Load a report before saving a copy on this device.';
+ return 'Edits stay in this session until you explicitly save an investigation or snapshot on this device. Saved work can be lost if browser storage is cleared.';
+}
+
 // Use captured evidence rather than the currently selected period or dataset.
 export function capturedInvestigationExcerpt(context, example=false) {
  if(!context || !context.observation || !context.selectedPeriod?.start || !context.selectedPeriod?.end)return '';
