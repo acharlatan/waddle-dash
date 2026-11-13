@@ -16,7 +16,7 @@ const $ = s => document.querySelector(s);
 const content = $('#content'), dialog = $('#upload-dialog');
 const state = {data:null, name:'', example:false, days:'30', parsed:null, page:'overview', question:'', search:'', metric:'revenue', sort:'revenue', mode:'personal', goal:'Sales', report:{}, plan:{},caseContext:null,investigationTitle:'',investigationId:'',investigationRootId:'',investigationDirty:false,checkins:[]};
 const slots={personal:null,demo:null};
-const colors = ['#ff923d','#69b8f3','#ffc835','#e995a2','#9dc58e','#b99bdb'];
+const colors = [`var(--wd-chart-1, #ff923d)`,`var(--wd-chart-2, #69b8f3)`,`var(--wd-chart-3, #ffc835)`,`var(--wd-chart-4, #e995a2)`,`var(--wd-chart-5, #9dc58e)`,`var(--wd-chart-6, #b99bdb)`];
 const escapeHTML = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = v => v === null || !Number.isFinite(v) ? '—' : new Intl.NumberFormat('en-US',{style:'currency',currency:state.data?.currency || 'USD',minimumFractionDigits:0,maximumFractionDigits:2}).format(v);
 const costMoney = v => v === null || !Number.isFinite(v) ? '—' : new Intl.NumberFormat('en-US',{style:'currency',currency:state.data?.currency || 'USD',maximumFractionDigits:2}).format(v);

@@ -53,3 +53,10 @@ The report offers a print-layout preview and **Print / Save as PDF**, which open
 ## Run and deploy
 
 No build is required to serve `public/`. With Node.js, run `npm run check` and `npm test`. `wrangler.jsonc` deploys `public/` as static assets to the connected `waddle-dash` Cloudflare Worker. The Worker has no server-side code or data bindings.
+
+
+## Appearance
+
+Use the sun/moon control in the header to switch between light and dark mode. The first visit follows the system preference; an explicit choice is saved separately from workspace data and follows you across tabs. Dark palettes cover charts, forms, workspaces and dialogs. Reports keep their light paper palette in print and print-layout preview.
+
+`npm run dev` serves the static site for local development.
